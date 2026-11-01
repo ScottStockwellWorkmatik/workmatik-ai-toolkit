@@ -44,9 +44,9 @@
     <button class="tab" role="tab" id="tab-path" aria-controls="panel-path" aria-selected="true">Path</button>
     <button class="tab" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files</button>
     <button class="tab" role="tab" id="tab-strategy" aria-controls="panel-strategy" aria-selected="false" tabindex="-1">Strategy</button>
+    <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Journey Map</button>
     <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
     <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
-    <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Journey Map</button>
     <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
   </div>
 
@@ -86,6 +86,10 @@
     <div id="strategyBody" hidden></div>
   </section>
 
+  <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
+    <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map"></iframe>
+  </section>
+
   <section id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
     <div class="info-box"><strong>The rules behind the sequence.</strong> Change a value and the Strategy tab updates. All of these are the author&rsquo;s proposals and have no published source.</div>
     <div class="card">
@@ -120,9 +124,6 @@
     <div class="card"><h2>About your data</h2><p>This page has no server, no account and no tracking. Files are read in your browser and never uploaded. Nothing is kept when you close or refresh the page, so download the result if you want a record.</p></div>
   </section>
 
-  <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
-    <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map"></iframe>
-  </section>
 
   <section id="panel-framework" role="tabpanel" aria-labelledby="tab-framework" hidden>
     <div id="fwref"><h1>AI Framework Reference</h1><p class="fw-intro">What domain, capability, skill, workflow, activity and use case each mean, and how the Workmatik AI tools fit together.</p><main>
@@ -253,7 +254,7 @@
 <footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. Version <span id="fwVersion"></span>. These tools support planning and are not legal advice.</p></div></footer>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
-<script src="js/strategy.js?v=3"></script>
+<script src="js/strategy.js?v=4"></script>
 <script src="js/path.js?v=1"></script>
 </body>
 </html>

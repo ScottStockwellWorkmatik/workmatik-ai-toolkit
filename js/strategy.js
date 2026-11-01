@@ -343,7 +343,7 @@
     [['Where AI applies', 'AI Roles Assessment', 'Role IDs and activity IDs'], ['Suggested sequence', 'AI Workflow Assessment (and the AI Capability Assessment to test readiness)', 'Workflow IDs, capability IDs'], ['Foundations to fix first', 'AI Capability Assessment and AI Workflow Assessment', 'Capability IDs'], ['Skills to build', 'AI Skills Assessment and/or Marketing Skills Map', 'Skill domain IDs (SD01 to SD06), skill IDs (MS01 to MS10)']].forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', null, c)); }); b2.appendChild(tr); });
     f.appendChild(b2);
   }
-  var TABS = ['path', 'files', 'strategy', 'rules', 'guide', 'journey', 'framework'];
+  var TABS = ['path', 'files', 'strategy', 'journey', 'rules', 'guide', 'framework'];
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
     if (name === 'strategy') renderStrategy();
