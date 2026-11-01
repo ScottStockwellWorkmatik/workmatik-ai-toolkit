@@ -1,0 +1,369 @@
+{
+ "version": "1.0.0",
+ "categories": [
+  "Strategy, Leadership and Value",
+  "Workflows",
+  "Operating Model and Ecosystem",
+  "People and Skills",
+  "Data and Technology",
+  "Governance and Risk",
+  "Culture and Change"
+ ],
+ "phases": [
+  "Direct",
+  "Organise",
+  "Build",
+  "Scale",
+  "Sustain"
+ ],
+ "capabilities": [
+  {
+   "id": "S1",
+   "name": "AI vision with transformative growth and innovation ambition",
+   "cat": 0,
+   "phase": 0,
+   "critical": true
+  },
+  {
+   "id": "S2",
+   "name": "Priority domains and use-case portfolio",
+   "cat": 0,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "S3",
+   "name": "Impact tracking: KPIs and business-level value",
+   "cat": 0,
+   "phase": 2,
+   "critical": true
+  },
+  {
+   "id": "S4",
+   "name": "Executive sponsorship and visible role-modelling",
+   "cat": 0,
+   "phase": 0,
+   "critical": true
+  },
+  {
+   "id": "S5",
+   "name": "AI investment commitment and cost management",
+   "cat": 0,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "W1",
+   "name": "Workflow mapping and prioritisation",
+   "cat": 1,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "W2",
+   "name": "End-to-end redesign and embedding",
+   "cat": 1,
+   "phase": 2,
+   "critical": true
+  },
+  {
+   "id": "W3",
+   "name": "Human-in-the-loop design",
+   "cat": 1,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "W4",
+   "name": "Feedback, scaling and reuse of proven workflows",
+   "cat": 1,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "W5",
+   "name": "Agentic and automation orchestration",
+   "cat": 1,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "O1",
+   "name": "Roles, ownership and business-led redesign",
+   "cat": 2,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "O2",
+   "name": "Transformation office with authority to scale",
+   "cat": 2,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "O3",
+   "name": "Central vs distributed model",
+   "cat": 2,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "O4",
+   "name": "Build, buy and partner decisions; agency management",
+   "cat": 2,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "O5",
+   "name": "Cross-functional alignment",
+   "cat": 2,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "P1",
+   "name": "AI literacy (all staff)",
+   "cat": 3,
+   "phase": 0,
+   "critical": false
+  },
+  {
+   "id": "P2",
+   "name": "Role-based capability training",
+   "cat": 3,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "P3",
+   "name": "Leadership AI fluency",
+   "cat": 3,
+   "phase": 0,
+   "critical": false
+  },
+  {
+   "id": "P4",
+   "name": "Strategic workforce planning",
+   "cat": 3,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "D1",
+   "name": "Access and security",
+   "cat": 4,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "D2",
+   "name": "Data quality and availability",
+   "cat": 4,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "D3",
+   "name": "Data integration, architecture and semantic layer",
+   "cat": 4,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "D4",
+   "name": "AI tool and platform stack",
+   "cat": 4,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "D5",
+   "name": "Performance monitoring of tools and models",
+   "cat": 4,
+   "phase": 4,
+   "critical": false
+  },
+  {
+   "id": "G1",
+   "name": "Policy and acceptable use",
+   "cat": 5,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "G2",
+   "name": "Enterprise governance alignment and oversight",
+   "cat": 5,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "G3",
+   "name": "Regulatory compliance",
+   "cat": 5,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "G4",
+   "name": "Risk assessment and monitoring (baseline and advanced)",
+   "cat": 5,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "G5",
+   "name": "Customer trust, brand and IP safeguards",
+   "cat": 5,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "G6",
+   "name": "Agent autonomy and permission controls",
+   "cat": 5,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "C1",
+   "name": "Case for change and regular communication",
+   "cat": 6,
+   "phase": 0,
+   "critical": false
+  },
+  {
+   "id": "C2",
+   "name": "Adoption and champion networks",
+   "cat": 6,
+   "phase": 1,
+   "critical": false
+  },
+  {
+   "id": "C3",
+   "name": "Test-and-learn experimentation",
+   "cat": 6,
+   "phase": 2,
+   "critical": false
+  },
+  {
+   "id": "C4",
+   "name": "Employee trust, workload strain and workforce transition",
+   "cat": 6,
+   "phase": 3,
+   "critical": false
+  },
+  {
+   "id": "C5",
+   "name": "Performance management and recognition",
+   "cat": 6,
+   "phase": 4,
+   "critical": false
+  }
+ ],
+ "skillDomains": [
+  {
+   "id": "SD01",
+   "name": "AI literacy & concepts"
+  },
+  {
+   "id": "SD02",
+   "name": "Ethical & responsible AI"
+  },
+  {
+   "id": "SD03",
+   "name": "AI tools & practical application"
+  },
+  {
+   "id": "SD04",
+   "name": "Data & privacy governance"
+  },
+  {
+   "id": "SD05",
+   "name": "Change leadership & AI strategy"
+  },
+  {
+   "id": "SD06",
+   "name": "AI application to organisational strategy"
+  }
+ ],
+ "catToDomains": {
+  "0": [
+   "SD05",
+   "SD06"
+  ],
+  "1": [
+   "SD03"
+  ],
+  "2": [
+   "SD05"
+  ],
+  "3": [
+   "SD01",
+   "SD05"
+  ],
+  "4": [
+   "SD03",
+   "SD04"
+  ],
+  "5": [
+   "SD02",
+   "SD04"
+  ],
+  "6": [
+   "SD01",
+   "SD05"
+  ]
+ },
+ "mapSkills": [
+  {
+   "id": "MS01",
+   "tag": "Measurement"
+  },
+  {
+   "id": "MS02",
+   "tag": "AI Literacy"
+  },
+  {
+   "id": "MS03",
+   "tag": "Creativity"
+  },
+  {
+   "id": "MS04",
+   "tag": "Collaboration"
+  },
+  {
+   "id": "MS05",
+   "tag": "Community Engagement"
+  },
+  {
+   "id": "MS06",
+   "tag": "Go-to-market"
+  },
+  {
+   "id": "MS07",
+   "tag": "Efficiency"
+  },
+  {
+   "id": "MS08",
+   "tag": "Adaptability"
+  },
+  {
+   "id": "MS09",
+   "tag": "AI Governance"
+  },
+  {
+   "id": "MS10",
+   "tag": "Building Trust"
+  }
+ ],
+ "quadrants": {
+  "start": "Start here",
+  "prepare": "Prepare first",
+  "quick": "Quick win",
+  "park": "Park",
+  "prohibited": "Do not proceed"
+ }
+}

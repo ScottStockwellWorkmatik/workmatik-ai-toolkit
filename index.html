@@ -29,16 +29,26 @@
 <header class="site-header">
   <div class="wrap header-inner">
     <div>
-      <img class="logo" src="assets/logo-black.svg" alt="Workmatik">
+      <img class="logo" src="assets/logo-black.svg" alt="Workmatik" id="logoScreen">
       <h1>AI Toolkit</h1>
-      <p class="sub">Six steps from where AI applies to one joined-up AI strategy. Each tool runs in your browser and hands its Excel file to the next.</p>
+      <p class="sub">Work through the tools in order, then load your Excel files here to get one joined-up AI strategy.</p>
     </div>
-    <p class="privacy-chip">Nothing is uploaded. Your progress is kept only in this browser.</p>
+    <p class="privacy-chip">Runs in your browser. Files are never uploaded.</p>
   </div>
 </header>
 
 <main id="main" class="wrap">
-  <div class="info-box"><strong>How the path works.</strong> Work through the steps in order, or skip any you do not need. At the end of each tool, download its Excel file and keep it. The AI Strategy View reads all of them together. Use the same organisation or team name in every tool so the files match.</div>
+  <p id="loadError" class="error" role="alert" hidden></p>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-path" aria-controls="panel-path" aria-selected="true">Path</button>
+    <button class="tab" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files</button>
+    <button class="tab" role="tab" id="tab-strategy" aria-controls="panel-strategy" aria-selected="false" tabindex="-1">Strategy</button>
+    <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
+    <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
+  </div>
+
+  <section id="panel-path" role="tabpanel" aria-labelledby="tab-path">
+  <div class="info-box"><strong>How the path works.</strong> Work through the steps in order, or skip any you do not need. At the end of each tool, download its Excel file and keep it. The Files and Strategy tabs here read all of them together. Use the same organisation or team name in every tool so the files match.</div>
 
   <div class="tk-progress" aria-live="polite"><span id="progressText"></span><div class="bar" aria-hidden="true"><span id="progressBar"></span></div></div>
 
@@ -51,8 +61,66 @@
   </div>
 
   <div class="actions"><button class="btn" id="btnReset" type="button">Clear my progress</button></div>
+  </section>
+
+  <section id="panel-files" role="tabpanel" aria-labelledby="tab-files" hidden>
+    <div class="info-box"><strong>Load the files you have.</strong> Use the Excel files you downloaded from the other Workmatik tools. Any combination works. The page recognises each file by its contents, so you can load them all at once.</div>
+    <div class="dropzone" id="dropzone">
+      <button class="btn primary" id="btnPick" type="button">Choose Excel files</button>
+      <input id="fileInput" type="file" accept=".xlsx" multiple hidden>
+      <span>or drop them here</span>
+    </div>
+    <ul id="loadMessages" class="messages" aria-live="polite"></ul>
+    <div class="card">
+      <h2>Files loaded</h2>
+      <div class="table-scroll"><table id="fileTable"></table></div>
+      <div class="actions"><button class="btn primary" id="btnGoStrategy" type="button">See the strategy</button><button class="btn" id="btnClear" type="button">Remove all files</button></div>
+    </div>
+  </section>
+
+  <section id="panel-strategy" role="tabpanel" aria-labelledby="tab-strategy" hidden>
+    <div id="strategyEmpty" class="empty">Load at least one file on the Files tab to see the strategy.</div>
+    <div id="strategyBody" hidden></div>
+  </section>
+
+  <section id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
+    <div class="info-box"><strong>The rules behind the sequence.</strong> Change a value and the Strategy tab updates. All of these are the author&rsquo;s proposals and have no published source.</div>
+    <div class="card">
+      <h2>Thresholds</h2>
+      <div class="thr">
+        <label><span class="lbl">Capability is weak at or below</span><input id="rCap" type="number" min="1" max="5" step="0.5"></label>
+        <label><span class="lbl">Workflows to start first</span><input id="rFirst" type="number" min="1" max="10" step="1"></label>
+        <label><span class="lbl">Skill domain is a gap at or below (0 to 4)</span><input id="rSkill" type="number" min="0" max="4" step="0.5"></label>
+        <label><span class="lbl">Skills Map: important means rank at or above</span><input id="rRank" type="number" min="1" max="10" step="1"></label>
+        <label><span class="lbl">Skills Map: low coverage at or below (0 to 10)</span><input id="rCov" type="number" min="0" max="10" step="1"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>How the sequence is built</h2>
+      <ol class="steps">
+        <li><strong>Start now.</strong> Workflows in the Start here group whose capabilities are not weak, highest priority first, up to the number above.</li>
+        <li><strong>Quick wins.</strong> Workflows in the Quick win group whose capabilities are not weak.</li>
+        <li><strong>Fix first, then build.</strong> Start here and Prepare first workflows held up by a weak capability. The weak capabilities are listed as foundations, earliest journey-map phase first, then by how many workflows they hold up.</li>
+        <li><strong>Hold.</strong> Park workflows, and any workflow in a prohibited tier, which should not go ahead.</li>
+        <li><strong>Skills.</strong> Each foundation capability points to skill domains (table below). A domain is a gap if the average is at or below the threshold. A Marketing Skills Map skill is a gap if it is important but has low coverage.</li>
+      </ol>
+      <p class="hint">A capability that has not been scored is shown as &ldquo;not yet scored&rdquo; and is not treated as weak. If no capability file is loaded, no workflow is held back and the page says so.</p>
+    </div>
+    <div class="card"><h2>Capability category to skill domain</h2><div class="table-scroll"><table id="mapTable"></table></div><p class="hint">This link is the author&rsquo;s judgement.</p></div>
+  </section>
+
+  <section id="panel-guide" role="tabpanel" aria-labelledby="tab-guide" hidden>
+    <div class="card"><h2>What this tool does</h2><p>It does not score anything itself. It reads the files from the other tools, matches them on their stable IDs and shows what they say together. Each section needs its own file, and appears only when that file is loaded.</p></div>
+    <div class="card"><h2>Which file feeds which section</h2><div class="table-scroll"><table id="feedTable"></table></div></div>
+    <div class="card"><h2>Your own data</h2><p>Custom roles and activities from the AI Roles Assessment, and your own workflows from the AI Workflow Assessment, are carried in those files and appear here with their own IDs.</p></div>
+    <div class="card"><h2>Download</h2><p>On the Strategy tab, select <em>Download strategy (XLSX)</em>. The file lists the sequence, the workflows, the foundation capabilities, the skills findings and the files it was built from.</p></div>
+    <div class="card"><h2>About your data</h2><p>This page has no server, no account and no tracking. Files are read in your browser and never uploaded. Nothing is kept when you close or refresh the page, so download the result if you want a record.</p></div>
+  </section>
 </main>
-<footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. These tools support planning and are not legal advice.</p></div></footer>
-<script src="js/app.js?v=1"></script>
+<footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. Version <span id="fwVersion"></span>. These tools support planning and are not legal advice.</p></div></footer>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/exceljs.min.js"></script>
+<script src="js/strategy.js?v=1"></script>
+<script src="js/path.js?v=1"></script>
 </body>
 </html>
