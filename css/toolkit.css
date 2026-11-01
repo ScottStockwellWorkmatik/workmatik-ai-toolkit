@@ -1,0 +1,23 @@
+.tk-progress{margin:20px 0 8px;font-weight:600;color:var(--navy)}
+.tk-progress .bar{height:10px;border-radius:5px;background:var(--grey);margin-top:8px;overflow:hidden}
+.tk-progress .bar span{display:block;height:100%;width:0;background:var(--navy);transition:width .2s}
+.tk-steps{list-style:none;margin:20px 0 28px;padding:0;counter-reset:none}
+.tk-step{display:grid;grid-template-columns:56px minmax(0,1fr);gap:0 18px;position:relative;padding-bottom:20px}
+.tk-step:not(:last-child)::before{content:"";position:absolute;left:27px;top:56px;bottom:0;width:2px;background:var(--grey)}
+.tk-num{width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.tk-step.done .tk-num{background:#0b7a3b}
+.tk-card{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:#fff}
+.tk-step.done .tk-card{background:var(--pale)}
+.tk-card h2{margin:0 0 2px}
+.tk-level{display:inline-block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.tk-q{font-weight:600;margin:0 0 10px}
+.tk-io{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin:12px 0}
+.tk-io dt{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}
+.tk-io dd{margin:2px 0 0}
+.tk-tip{background:var(--pale);border-left:4px solid var(--blue);padding:8px 12px;margin:12px 0;border-radius:0 8px 8px 0}
+.tk-foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:14px}
+.tk-foot label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.tk-foot input{width:18px;height:18px}
+.tk-also p{margin:0 0 8px}
+@media(max-width:640px){.tk-step{grid-template-columns:40px minmax(0,1fr);gap:0 12px}.tk-num{width:40px;height:40px;font-size:18px}.tk-step:not(:last-child)::before{left:19px;top:40px}.tk-io{grid-template-columns:1fr}}
+.tk-foot a.btn{text-decoration:none}
