@@ -6,4 +6,4 @@ Tabs: Path (six steps with links and a progress tick-list), Files (load the XLSX
 
 Static site, browser-only. Files are read locally and never uploaded. Progress ticks are stored only in the visitor's browser (localStorage). Tool links point to https://scottstockwellworkmatik.github.io/ (edit BASE in js/path.js if the account changes).
 
-Replaces the separate ai-strategy-view repo.
+Replaces the separate ai-strategy-view repo. The Journey Map tab embeds a copy of that page from the journey/ folder (iframe, ?embed=1). The Framework tab is inline in index.html with styles scoped in css/framework.css.

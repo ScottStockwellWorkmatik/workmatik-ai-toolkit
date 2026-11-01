@@ -22,7 +22,8 @@
 <meta name="apple-mobile-web-app-title" content="AI Toolkit">
 <link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="css/styles.css?v=1">
-<link rel="stylesheet" href="css/toolkit.css?v=2">
+<link rel="stylesheet" href="css/toolkit.css?v=3">
+<link rel="stylesheet" href="css/framework.css?v=1">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -120,18 +121,139 @@
   </section>
 
   <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
-    <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map" loading="lazy"></iframe>
+    <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map"></iframe>
   </section>
 
   <section id="panel-framework" role="tabpanel" aria-labelledby="tab-framework" hidden>
-    <iframe class="tk-frame" id="frame-framework" data-src="framework/index.html?embed=1" title="AI Framework Reference" loading="lazy"></iframe>
+    <div id="fwref"><h1>AI Framework Reference</h1><p class="fw-intro">What domain, capability, skill, workflow, activity and use case each mean, and how the Workmatik AI tools fit together.</p><main>
+
+  <h2>The terms at a glance</h2>
+  <p class="lead">One word per level, used the same way in every tool. Capabilities and skills describe what can be done. Roles, workflows, activities and use cases describe the work.</p>
+  <table class="defs">
+    <thead><tr><th>Term</th><th>What it is</th><th>Question it answers</th><th>Level</th><th>Real example</th></tr></thead>
+    <tbody>
+      <tr><td>Domain</td><td>A subject area that groups related items. It is a heading, not something that can be scored on its own.</td><td>Which area is this in?</td><td><span class="tag">Grouping</span></td><td>&ldquo;Data &amp; privacy&rdquo; (AI Skills Assessment)</td></tr>
+      <tr><td>Capability</td><td>Something a team or function can do reliably, repeatedly and with evidence. It does not depend on one person.</td><td>Can the function do this?</td><td><span class="tag">Team or function</span></td><td>G1, &ldquo;Set AI policy and acceptable use&rdquo;</td></tr>
+      <tr><td>Skill</td><td>What an individual knows or can do, rated by level.</td><td>Can this person do this?</td><td><span class="tag">Individual</span></td><td>&ldquo;Assesses AI tools against EU AI Act classification criteria&rdquo; at Level 3</td></tr>
+      <tr><td>Role</td><td>A job, made up of tasks and activities.</td><td>Who does the work?</td><td><span class="tag work">Work</span></td><td>Content Writer / Copywriter</td></tr>
+      <tr><td>Workflow</td><td>A repeatable sequence of steps, handoffs and decisions that turns an input into an outcome, usually across several roles.</td><td>How does the work flow, end to end?</td><td><span class="tag work">Work</span></td><td>Content planning to publication (WF01)</td></tr>
+      <tr><td>Activity</td><td>One unit of work inside a role and inside a workflow. This is the shared unit.</td><td>What exactly is done?</td><td><span class="tag work">Work</span></td><td>&ldquo;Blog post writing&rdquo;</td></tr>
+      <tr><td>Use case</td><td>A specific application of AI to a specific activity or workflow, for a stated outcome.</td><td>Where and how do we apply AI?</td><td><span class="tag work">Work</span></td><td>That activity classed as Augmentation: AI supports, a person decides</td></tr>
+    </tbody>
+  </table>
+
+  <h2>An analogy: a restaurant kitchen</h2>
+  <div class="card">
+    <ul class="kitchen">
+      <li><b>Domain</b> is the section of the kitchen, such as pastry or grill.</li>
+      <li><b>Capability</b> is the kitchen being able to put out a perfect dessert at 200 covers, however many cooks are on shift.</li>
+      <li><b>Skill</b> is one chef&rsquo;s knife work or piping.</li>
+      <li><b>Role</b> is the station a cook works.</li>
+      <li><b>Workflow</b> is a dish&rsquo;s journey from order ticket through each station to the plate.</li>
+      <li><b>Activity</b> is one step on that journey, such as plating the sauce.</li>
+      <li><b>Use case</b> is tonight&rsquo;s decision to use a new machine at one step, or to redesign the whole dish.</li>
+    </ul>
+    <p class="hint" style="margin-top:8px">Skills build capabilities, and capabilities make use cases possible. A use case fails when the capability is missing, even if individual skills are strong. A brilliant prompter with no approved data or policy still cannot deliver.</p>
+  </div>
+
+  <h2>How they nest</h2>
+  <p class="lead">Two sides of one organisation. The left asks what it is able to do. The right asks what work it does. Use cases sit where the two meet.</p>
+  <div class="tree">
+    <div class="col cap">
+      <h3>What the organisation can do</h3>
+      <div class="node">Domain or category<small>The heading that groups related items</small></div>
+      <div class="indent">
+        <div class="node">Capability<small>Function level. Scored in the AI Capability Assessment</small></div>
+        <div class="node">Skill<small>Individual level. Scored in the AI Skills Assessment</small></div>
+      </div>
+    </div>
+    <div class="col work">
+      <h3>What work it does</h3>
+      <div class="node">Role &rarr; Task &rarr; Activity<small>Who does what. Sorted in the AI Roles Assessment</small></div>
+      <div class="node">Workflow &rarr; Step &rarr; Activity<small>How the work flows end to end</small></div>
+      <p class="hint" style="margin:0">The same activity belongs to one role and sits in one or more workflows. Roles are the vertical slices, workflows the horizontal ones.</p>
+    </div>
+  </div>
+  <div class="usecase"><b>Use case</b> = an AI intervention at one activity or step, or a redesign of a whole workflow. It needs capabilities (the function can support it) and skills (people can deliver it).</div>
+
+  <h2>Worked example, from the tools themselves</h2>
+  <p class="lead">One activity from the AI Roles Assessment, placed in a workflow from the AI Workflow Assessment and traced back to the capabilities and skills that would make it work. The links between them are the author&rsquo;s judgement.</p>
+  <div class="chain">
+    <div class="link"><span class="k">Role</span><span>Content Writer / Copywriter (R02), in the group Content and creative</span></div>
+    <div class="link"><span class="k">Task</span><span>Content Creation</span></div>
+    <div class="link"><span class="k">Activity</span><span>Blog post writing (A025), classified <b>Augmentation</b> in the AI Roles Assessment</span></div>
+    <div class="link"><span class="k">Workflow</span><span>Content planning to publication (WF01): content gap analysis, editorial calendar, content brief, blog post writing, fact checking, brand voice check, editing, publishing, performance reporting. Blog post writing is step 4 of 9.</span></div>
+    <div class="link"><span class="k">Use case</span><span>AI produces a first draft of the blog post, a person edits and approves it.</span></div>
+    <div class="link"><span class="k">Capabilities needed</span><span>G1 Policy and acceptable use &middot; D2 Data quality and availability &middot; W3 Human-in-the-loop design &middot; W2 End-to-end redesign and embedding</span></div>
+    <div class="link"><span class="k">Skills needed</span><span>Domains from the AI Skills Assessment: AI literacy, Ethics, Tools, Data &amp; privacy</span></div>
+  </div>
+
+  <h2>How the tools fit together</h2>
+  <p class="lead">Read in order, they answer a sequence of questions.</p>
+  <div class="apps">
+    <div class="app"><div><span class="step-n">1</span><h3 style="display:inline">AI Roles Assessment</h3></div><span class="lvl">Work</span><p class="q">Where could AI apply? Classifies 519 activities across 31 roles, in six groups, as full automation, augmentation or human only. You can add your own roles and activities.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-roles-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">2</span><h3 style="display:inline">AI Workflow Assessment</h3></div><span class="lvl">Work</span><p class="q">Which workflows first? Scores 31 starter workflows (or your own) on value, feasibility and risk, adds an indicative EU AI Act tier, and ranks the use cases to start with. Loads your Roles Assessment file.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-workflow-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">3</span><h3 style="display:inline">AI Capability Assessment</h3></div><span class="lvl">Function level</span><p class="q">Can the function support it? Scores 35 capabilities across seven categories and shows critical gaps.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-capability-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">4</span><h3 style="display:inline">AI Skills Assessment</h3></div><span class="lvl">Individual level</span><p class="q">Can the people deliver it? Rates six domains across five levels, with EU AI Act indicators.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">4</span><h3 style="display:inline">Marketing Skills Map</h3></div><span class="lvl">Team level</span><p class="q">Which skills matter most, and where does the team have gaps? Ranks the top 10 skills and rates coverage.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-map/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">5</span><h3 style="display:inline">Marketing AI Journey Map</h3></div><span class="lvl">Sequence</span><p class="q">In what order do we build it? Shows what each of 35 capability actions needs first and what it unlocks, across a leader flow and a marketer flow.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-journey-map/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">6</span><h3 style="display:inline">AI Toolkit</h3></div><span class="lvl">Strategy</span><p class="q">What do we do first, and what must be fixed before that? A guided path through the tools above. Its Strategy tab combines their Excel files into one sequence of workflows, foundations and skills to build.</p><a class="go" href="./">Open the toolkit</a></div>
+  </div>
+
+  <h2>How the files connect</h2>
+  <p class="lead">Each tool downloads an Excel file. Items carry a stable ID, so another tool can recognise them even if the wording changes. Nothing is sent anywhere: files move only when you download and load them.</p>
+  <table class="defs">
+    <thead><tr><th>Item</th><th>ID</th><th>Your own</th><th>Set by</th></tr></thead>
+    <tbody>
+      <tr><td>Role</td><td>R01 to R31</td><td>RC01 onwards</td><td>AI Roles Assessment</td></tr>
+      <tr><td>Activity</td><td>A001 to A519</td><td>AC001 onwards</td><td>AI Roles Assessment</td></tr>
+      <tr><td>Workflow</td><td>WF01 to WF31</td><td>WFC01 onwards</td><td>AI Workflow Assessment</td></tr>
+      <tr><td>Capability</td><td>S1, W1, O1 and so on, one letter and a number</td><td>Not yet</td><td>AI Capability Assessment</td></tr>
+      <tr><td>Skill domain</td><td>SD01 to SD06</td><td>Not yet</td><td>AI Skills Assessment</td></tr>
+      <tr><td>Marketing skill</td><td>MS01 to MS10</td><td>Not yet</td><td>Marketing Skills Map</td></tr>
+    </tbody>
+  </table>
+  <div class="usecase"><b>Working today:</b> every tool&rsquo;s Excel file carries its IDs in a &ldquo;Workmatik data&rdquo; sheet. The AI Workflow Assessment loads a file from the AI Roles Assessment, so workflows and steps follow the roles and activities you put in scope, including your own. The AI Capability Assessment loads a file from the AI Workflow Assessment and shows which capabilities your scored workflows depend on. The Strategy tab in the AI Toolkit loads any combination of the tools&rsquo; files and joins them on these IDs into one sequence: workflows to start, capabilities to fix first and skills to build. <b>Planned:</b> the skills tools reading the workflow and capability files.</div>
+
+  <h2>Role groups</h2>
+  <p class="lead">The AI Roles Assessment lists roles in six groups, alphabetical within each. The AI Workflow Assessment uses the same six groups for its workflows.</p>
+  <table class="defs">
+    <thead><tr><th>Group</th><th>Roles</th></tr></thead>
+    <tbody>
+      <tr><td>Strategy and planning</td><td>Brand Strategist; Competitive Intelligence Analyst; Customer Insights Analyst; Marketing Planning and Budget Manager</td></tr>
+      <tr><td>Content and creative</td><td>Content Strategist; Content Writer / Copywriter; Creative and Design Specialist; Localisation Specialist; Synthetic Content Specialist</td></tr>
+      <tr><td>Demand and channels</td><td>ABM Specialist; Demand Generation Specialist; Email Marketing Specialist; Performance Marketing Specialist; SEO Specialist; Social Media Specialist; Website and Digital Experience Specialist</td></tr>
+      <tr><td>Go-to-market and relationships</td><td>Customer Marketing Specialist; Event Marketing Specialist; Field Marketing Specialist; Partner Marketing Specialist; PR / Communications Specialist; Product Marketing Manager</td></tr>
+      <tr><td>Operations, data and delivery</td><td>Agency and Vendor Manager; Campaign and Project Manager; Marketing Data Analyst; Marketing Operations Specialist; Revenue Operations Specialist</td></tr>
+      <tr><td>AI and emerging</td><td>AEO/GEO Specialist; AI Marketing Operations Specialist; Conversational AI Specialist; Marketing AI Governance Specialist</td></tr>
+    </tbody>
+  </table>
+  <p class="hint">The groups and the allocation of roles to them are the author&rsquo;s judgement and have no published source.</p>
+
+  <h2>Naming rules</h2>
+  <div class="card">
+    <ol class="rules">
+      <li><b>Domain and category mean the same thing.</b> The AI Skills Assessment says domain and the AI Capability Assessment says category. Either is fine, but do not use both in one place.</li>
+      <li><b>Activity means a unit of work.</b> In the Journey Map each capability also has an action to build it, such as &ldquo;Set AI policy and acceptable use&rdquo;. Call that a capability action, so it is not confused with a job activity.</li>
+      <li><b>A flow is a lane, not a workflow.</b> The Journey Map&rsquo;s two flows are the leader and marketer lanes. Keep &ldquo;workflow&rdquo; for the work itself.</li>
+      <li><b>A group is a heading, not a level.</b> Role groups (such as Strategy and planning) and workflow groups organise lists in the planner. They are not domains and are not scored.</li>
+      <li><b>Capability is about the function, skill is about the person.</b> If it can be done by one person leaving and taking it with them, it is a skill, not a capability.</li>
+    </ol>
+  </div>
+
+  <h2>Best practice</h2>
+  <div class="card">
+    <p>Redesign the workflow before choosing tools. Decompose it to small tasks, classify each as automation, augmentation or human only, then redesign around what AI makes possible rather than automating today&rsquo;s steps. Derive the skills you need from the redesigned workflow, not from existing job descriptions.</p>
+    <p class="hint">The definitions, structure and sequence on this page are the author&rsquo;s judgement and have no published source. Treat them as a starting point to challenge and adapt for your team.</p>
+  </div>
+</main></div>
   </section>
 
 </main>
 <footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. Version <span id="fwVersion"></span>. These tools support planning and are not legal advice.</p></div></footer>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
-<script src="js/strategy.js?v=2"></script>
+<script src="js/strategy.js?v=3"></script>
 <script src="js/path.js?v=1"></script>
 </body>
 </html>

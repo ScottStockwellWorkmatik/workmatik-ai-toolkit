@@ -347,14 +347,14 @@
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
     if (name === 'strategy') renderStrategy();
-    if (name === 'journey' || name === 'framework') { var fr = $('frame-' + name); if (!fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src')); }
+    if (name === 'journey') { var fr = $('frame-' + name); if (!fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src')); }
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     window.scrollTo(0, 0);
   }
   window.__toolkitShowTab = showTab;
   window.addEventListener('message', function (e) {
     var d = e.data; if (!d || d.type !== 'tk-height' || typeof d.h !== 'number') return;
-    ['journey', 'framework'].forEach(function (n) { var fr = $('frame-' + n); if (fr && fr.contentWindow === e.source) fr.style.height = Math.max(400, Math.min(d.h, 20000)) + 'px'; });
+    ['journey'].forEach(function (n) { var fr = $('frame-' + n); if (fr && fr.contentWindow === e.source) fr.style.height = Math.max(400, Math.min(d.h, 20000)) + 'px'; });
   });
   function init() {
     $('fwVersion').textContent = REF.version;
