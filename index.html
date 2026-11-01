@@ -22,7 +22,7 @@
 <meta name="apple-mobile-web-app-title" content="AI Toolkit">
 <link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="css/styles.css?v=1">
-<link rel="stylesheet" href="css/toolkit.css?v=1">
+<link rel="stylesheet" href="css/toolkit.css?v=2">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -45,6 +45,8 @@
     <button class="tab" role="tab" id="tab-strategy" aria-controls="panel-strategy" aria-selected="false" tabindex="-1">Strategy</button>
     <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
     <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
+    <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Journey Map</button>
+    <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
   </div>
 
   <section id="panel-path" role="tabpanel" aria-labelledby="tab-path">
@@ -116,11 +118,20 @@
     <div class="card"><h2>Download</h2><p>On the Strategy tab, select <em>Download strategy (XLSX)</em>. The file lists the sequence, the workflows, the foundation capabilities, the skills findings and the files it was built from.</p></div>
     <div class="card"><h2>About your data</h2><p>This page has no server, no account and no tracking. Files are read in your browser and never uploaded. Nothing is kept when you close or refresh the page, so download the result if you want a record.</p></div>
   </section>
+
+  <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
+    <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map" loading="lazy"></iframe>
+  </section>
+
+  <section id="panel-framework" role="tabpanel" aria-labelledby="tab-framework" hidden>
+    <iframe class="tk-frame" id="frame-framework" data-src="framework/index.html?embed=1" title="AI Framework Reference" loading="lazy"></iframe>
+  </section>
+
 </main>
 <footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. Version <span id="fwVersion"></span>. These tools support planning and are not legal advice.</p></div></footer>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
-<script src="js/strategy.js?v=1"></script>
+<script src="js/strategy.js?v=2"></script>
 <script src="js/path.js?v=1"></script>
 </body>
 </html>

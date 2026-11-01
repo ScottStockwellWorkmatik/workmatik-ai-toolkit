@@ -343,14 +343,19 @@
     [['Where AI applies', 'AI Roles Assessment', 'Role IDs and activity IDs'], ['Suggested sequence', 'AI Workflow Assessment (and the AI Capability Assessment to test readiness)', 'Workflow IDs, capability IDs'], ['Foundations to fix first', 'AI Capability Assessment and AI Workflow Assessment', 'Capability IDs'], ['Skills to build', 'AI Skills Assessment and/or Marketing Skills Map', 'Skill domain IDs (SD01 to SD06), skill IDs (MS01 to MS10)']].forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', null, c)); }); b2.appendChild(tr); });
     f.appendChild(b2);
   }
-  var TABS = ['path', 'files', 'strategy', 'rules', 'guide'];
+  var TABS = ['path', 'files', 'strategy', 'rules', 'guide', 'journey', 'framework'];
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
     if (name === 'strategy') renderStrategy();
+    if (name === 'journey' || name === 'framework') { var fr = $('frame-' + name); if (!fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src')); }
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     window.scrollTo(0, 0);
   }
   window.__toolkitShowTab = showTab;
+  window.addEventListener('message', function (e) {
+    var d = e.data; if (!d || d.type !== 'tk-height' || typeof d.h !== 'number') return;
+    ['journey', 'framework'].forEach(function (n) { var fr = $('frame-' + n); if (fr && fr.contentWindow === e.source) fr.style.height = Math.max(400, Math.min(d.h, 20000)) + 'px'; });
+  });
   function init() {
     $('fwVersion').textContent = REF.version;
     var d = { rCap: 2, rFirst: 3, rSkill: 1.5, rRank: 5, rCov: 4 }; Object.keys(d).forEach(function (k) { $(k).value = d[k]; $(k).addEventListener('input', function () { if (!$('panel-strategy').hidden) renderStrategy(); }); });

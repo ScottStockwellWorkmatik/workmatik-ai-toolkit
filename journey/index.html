@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing AI Journey Map | Workmatik</title>
+<meta name="description" content="Step through the AI transformation journey for marketing. Two flows, one for the marketing leader and one for the marketer, cover 35 activities and show what must come first.">
+<meta property="og:title" content="Marketing AI Journey Map">
+<meta property="og:description" content="Two flows, 35 activities. See what a marketing leader and a marketer each need to do, in what order, and what depends on what.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://scottstockwellworkmatik.github.io/ai-journey-map/">
+<meta property="og:site_name" content="Workmatik">
+<meta property="og:image" content="https://scottstockwellworkmatik.github.io/ai-journey-map/og-image-journey-v2.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Marketing AI Journey Map by Workmatik: two flows of activities, one for the marketing leader and one for the marketer, across five phases with dependencies highlighted">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="css/styles.css">
+<base target="_top">
+<style>
+html.embed body{background:#fff}
+html.embed .site-header{background:#fff;padding:8px 0 0;border:0}
+html.embed .site-header .logo,html.embed .site-header .privacy-chip,html.embed .skip,html.embed .site-footer,html.embed .tk-back{display:none!important}
+html.embed .site-header h1{font-size:24px;color:#024873}
+html.embed .site-header .header-inner{display:block}
+</style>
+<script>
+(function(){
+  if (!/[?&]embed=1/.test(location.search)) return;
+  document.documentElement.classList.add('embed');
+  function send(){ var h=Math.ceil(document.documentElement.scrollHeight); try{ parent.postMessage({type:'tk-height',h:h,page:location.pathname},'*'); }catch(e){} }
+  window.addEventListener('load',function(){ send(); if (window.ResizeObserver) new ResizeObserver(send).observe(document.body); setInterval(send,1500); });
+})();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the map</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div>
+      <img class="logo" src="assets/logo-black.svg" alt="Workmatik" id="logoScreen">
+      <h1>Marketing AI Journey Map</h1>
+      <p class="sub">Two flows cover all 35 activities: what a marketing leader does and what a marketer does. Select an activity to see what must come first and what it unlocks.</p>
+    </div>
+    <p class="privacy-chip">Runs in your browser. Nothing is sent or stored.</p>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="info-box">
+    <strong>How to use this map.</strong>
+    <ol class="steps">
+      <li>Pick an activity in either flow. Red shows what it <em>needs first</em>, green shows what it <em>unlocks</em>. Leader activities are blue, marketer activities are orange.</li>
+      <li>Read the panel at the foot of the screen for the full activity, what &ldquo;done&rdquo; looks like and the linked activities. Select a linked activity to follow the chain.</li>
+      <li>Bold IDs in a box&rsquo;s &ldquo;Needs first&rdquo; line belong to the other flow, so they mark handovers between leader and marketer.</li>
+    </ol>
+  </div>
+
+  <div id="loadError" class="error" role="alert" hidden></div>
+
+  <div class="toolbar">
+    <ul class="keyline edgekey" aria-label="Connection key"><li><span class="swatch" style="background:#D93A55"></span>Needs first</li><li><span class="swatch" style="background:#1FA37A"></span>Unlocks</li><li><span class="swatch" style="background:#8A949C"></span>All dependencies</li></ul>
+    <label class="check"><input type="checkbox" id="showAll"> Show all dependencies</label>
+  </div>
+
+  <div class="map-scroll" tabindex="0" aria-label="Journey map, scrolls sideways on narrow screens">
+    <div class="stage" id="stage">
+      <svg class="edges" id="edges" aria-hidden="true">
+        <defs>
+          <marker id="m-up" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#D93A55"/></marker>
+          <marker id="m-down" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1FA37A"/></marker>
+          <marker id="m-all" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8A949C"/></marker>
+        </defs>
+        <g id="edgeLayer"></g>
+      </svg>
+      <section class="flow" id="flow-L" aria-labelledby="h-L"><h2 id="h-L"></h2><p class="flow-sub" id="s-L"></p><ul class="keyline flowkey" id="key-L" aria-label="Key"></ul><div class="grid" id="g-L"></div></section>
+      <section class="flow" id="flow-M" aria-labelledby="h-M"><h2 id="h-M"></h2><p class="flow-sub" id="s-M"></p><ul class="keyline flowkey" id="key-M" aria-label="Key"></ul><div class="grid" id="g-M"></div></section>
+    </div>
+  </div>
+
+  <section class="card panel" id="panel" aria-live="polite"><p class="empty">Select an activity to see what it needs first, what it unlocks and what done looks like.</p></section>
+
+  <section class="card">
+    <h2>About this map</h2>
+    <p>The 35 activities come from Workmatik&rsquo;s AI readiness framework for marketing. Each appears once: 18 in the leader flow and 17 in the marketer flow. The five phases are Direct, Organise, Build, Scale and Sustain.</p>
+    <p>The ID letter shows the category. A thick outline and a star mark the four activities proposed as critical.</p>
+    <p class="hint">The allocation of activities to the two flows, the phases and the dependencies are the author&rsquo;s judgement and have no published source. Treat them as a starting point to challenge and adapt for your team.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>&copy; Workmatik. Map version <span id="mapVersion"></span>. A planning aid, not advice.</p>
+  </div>
+</footer>
+<script src="js/app.js"></script>
+</body>
+</html>

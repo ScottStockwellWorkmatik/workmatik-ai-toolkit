@@ -21,3 +21,5 @@
 .tk-also p{margin:0 0 8px}
 @media(max-width:640px){.tk-step{grid-template-columns:40px minmax(0,1fr);gap:0 12px}.tk-num{width:40px;height:40px;font-size:18px}.tk-step:not(:last-child)::before{left:19px;top:40px}.tk-io{grid-template-columns:1fr}}
 .tk-foot a.btn{text-decoration:none}
+
+.tk-frame{width:100%;min-height:600px;border:0;display:block}
