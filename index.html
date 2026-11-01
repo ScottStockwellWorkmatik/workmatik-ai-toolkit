@@ -45,9 +45,9 @@
     <button class="tab" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files</button>
     <button class="tab" role="tab" id="tab-strategy" aria-controls="panel-strategy" aria-selected="false" tabindex="-1">Strategy</button>
     <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Journey Map</button>
+    <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
     <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
     <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
-    <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
   </div>
 
   <section id="panel-path" role="tabpanel" aria-labelledby="tab-path">
@@ -56,12 +56,6 @@
   <div class="tk-progress" aria-live="polite"><span id="progressText"></span><div class="bar" aria-hidden="true"><span id="progressBar"></span></div></div>
 
   <ol class="tk-steps" id="steps"></ol>
-
-  <div class="card tk-also">
-    <h2>Also useful</h2>
-    <p><a href="https://scottstockwellworkmatik.github.io/ai-framework-reference/">AI Framework Reference</a>: the shared vocabulary and how the files connect. Read it first if the terms are new.</p>
-    <p><a href="https://scottstockwellworkmatik.github.io/ai-journey-map/">Marketing AI Journey Map</a>: the order in which to build each capability. It does not use files, but it helps you act on the Strategy View&rsquo;s &ldquo;fix first&rdquo; list.</p>
-  </div>
 
   <div class="actions"><button class="btn" id="btnReset" type="button">Clear my progress</button></div>
   </section>
@@ -89,41 +83,6 @@
   <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
     <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map"></iframe>
   </section>
-
-  <section id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
-    <div class="info-box"><strong>The rules behind the sequence.</strong> Change a value and the Strategy tab updates. All of these are the author&rsquo;s proposals and have no published source.</div>
-    <div class="card">
-      <h2>Thresholds</h2>
-      <div class="thr">
-        <label><span class="lbl">Capability is weak at or below</span><input id="rCap" type="number" min="1" max="5" step="0.5"></label>
-        <label><span class="lbl">Workflows to start first</span><input id="rFirst" type="number" min="1" max="10" step="1"></label>
-        <label><span class="lbl">Skill domain is a gap at or below (0 to 4)</span><input id="rSkill" type="number" min="0" max="4" step="0.5"></label>
-        <label><span class="lbl">Skills Map: important means rank at or above</span><input id="rRank" type="number" min="1" max="10" step="1"></label>
-        <label><span class="lbl">Skills Map: low coverage at or below (0 to 10)</span><input id="rCov" type="number" min="0" max="10" step="1"></label>
-      </div>
-    </div>
-    <div class="card">
-      <h2>How the sequence is built</h2>
-      <ol class="steps">
-        <li><strong>Start now.</strong> Workflows in the Start here group whose capabilities are not weak, highest priority first, up to the number above.</li>
-        <li><strong>Quick wins.</strong> Workflows in the Quick win group whose capabilities are not weak.</li>
-        <li><strong>Fix first, then build.</strong> Start here and Prepare first workflows held up by a weak capability. The weak capabilities are listed as foundations, earliest journey-map phase first, then by how many workflows they hold up.</li>
-        <li><strong>Hold.</strong> Park workflows, and any workflow in a prohibited tier, which should not go ahead.</li>
-        <li><strong>Skills.</strong> Each foundation capability points to skill domains (table below). A domain is a gap if the average is at or below the threshold. A Marketing Skills Map skill is a gap if it is important but has low coverage.</li>
-      </ol>
-      <p class="hint">A capability that has not been scored is shown as &ldquo;not yet scored&rdquo; and is not treated as weak. If no capability file is loaded, no workflow is held back and the page says so.</p>
-    </div>
-    <div class="card"><h2>Capability category to skill domain</h2><div class="table-scroll"><table id="mapTable"></table></div><p class="hint">This link is the author&rsquo;s judgement.</p></div>
-  </section>
-
-  <section id="panel-guide" role="tabpanel" aria-labelledby="tab-guide" hidden>
-    <div class="card"><h2>What this tool does</h2><p>It does not score anything itself. It reads the files from the other tools, matches them on their stable IDs and shows what they say together. Each section needs its own file, and appears only when that file is loaded.</p></div>
-    <div class="card"><h2>Which file feeds which section</h2><div class="table-scroll"><table id="feedTable"></table></div></div>
-    <div class="card"><h2>Your own data</h2><p>Custom roles and activities from the AI Roles Assessment, and your own workflows from the AI Workflow Assessment, are carried in those files and appear here with their own IDs.</p></div>
-    <div class="card"><h2>Download</h2><p>On the Strategy tab, select <em>Download strategy (XLSX)</em>. The file lists the sequence, the workflows, the foundation capabilities, the skills findings and the files it was built from.</p></div>
-    <div class="card"><h2>About your data</h2><p>This page has no server, no account and no tracking. Files are read in your browser and never uploaded. Nothing is kept when you close or refresh the page, so download the result if you want a record.</p></div>
-  </section>
-
 
   <section id="panel-framework" role="tabpanel" aria-labelledby="tab-framework" hidden>
     <div id="fwref"><h1>AI Framework Reference</h1><p class="fw-intro">What domain, capability, skill, workflow, activity and use case each mean, and how the Workmatik AI tools fit together.</p><main>
@@ -250,11 +209,47 @@
 </main></div>
   </section>
 
+  <section id="panel-rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
+    <div class="info-box"><strong>The rules behind the sequence.</strong> Change a value and the Strategy tab updates. All of these are the author&rsquo;s proposals and have no published source.</div>
+    <div class="card">
+      <h2>Thresholds</h2>
+      <div class="thr">
+        <label><span class="lbl">Capability is weak at or below</span><input id="rCap" type="number" min="1" max="5" step="0.5"></label>
+        <label><span class="lbl">Workflows to start first</span><input id="rFirst" type="number" min="1" max="10" step="1"></label>
+        <label><span class="lbl">Skill domain is a gap at or below (0 to 4)</span><input id="rSkill" type="number" min="0" max="4" step="0.5"></label>
+        <label><span class="lbl">Skills Map: important means rank at or above</span><input id="rRank" type="number" min="1" max="10" step="1"></label>
+        <label><span class="lbl">Skills Map: low coverage at or below (0 to 10)</span><input id="rCov" type="number" min="0" max="10" step="1"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>How the sequence is built</h2>
+      <ol class="steps">
+        <li><strong>Start now.</strong> Workflows in the Start here group whose capabilities are not weak, highest priority first, up to the number above.</li>
+        <li><strong>Quick wins.</strong> Workflows in the Quick win group whose capabilities are not weak.</li>
+        <li><strong>Fix first, then build.</strong> Start here and Prepare first workflows held up by a weak capability. The weak capabilities are listed as foundations, earliest journey-map phase first, then by how many workflows they hold up.</li>
+        <li><strong>Hold.</strong> Park workflows, and any workflow in a prohibited tier, which should not go ahead.</li>
+        <li><strong>Skills.</strong> Each foundation capability points to skill domains (table below). A domain is a gap if the average is at or below the threshold. A Marketing Skills Map skill is a gap if it is important but has low coverage.</li>
+      </ol>
+      <p class="hint">A capability that has not been scored is shown as &ldquo;not yet scored&rdquo; and is not treated as weak. If no capability file is loaded, no workflow is held back and the page says so.</p>
+    </div>
+    <div class="card"><h2>Capability category to skill domain</h2><div class="table-scroll"><table id="mapTable"></table></div><p class="hint">This link is the author&rsquo;s judgement.</p></div>
+  </section>
+
+  <section id="panel-guide" role="tabpanel" aria-labelledby="tab-guide" hidden>
+    <div class="card"><h2>What this tool does</h2><p>It does not score anything itself. It reads the files from the other tools, matches them on their stable IDs and shows what they say together. Each section needs its own file, and appears only when that file is loaded.</p></div>
+    <div class="card"><h2>Which file feeds which section</h2><div class="table-scroll"><table id="feedTable"></table></div></div>
+    <div class="card"><h2>Your own data</h2><p>Custom roles and activities from the AI Roles Assessment, and your own workflows from the AI Workflow Assessment, are carried in those files and appear here with their own IDs.</p></div>
+    <div class="card"><h2>Download</h2><p>On the Strategy tab, select <em>Download strategy (XLSX)</em>. The file lists the sequence, the workflows, the foundation capabilities, the skills findings and the files it was built from.</p></div>
+    <div class="card"><h2>About your data</h2><p>This page has no server, no account and no tracking. Files are read in your browser and never uploaded. Nothing is kept when you close or refresh the page, so download the result if you want a record.</p></div>
+  </section>
+
+
+
 </main>
 <footer class="site-footer"><div class="wrap"><p>&copy; Workmatik. Version <span id="fwVersion"></span>. These tools support planning and are not legal advice.</p></div></footer>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
-<script src="js/strategy.js?v=4"></script>
+<script src="js/strategy.js?v=5"></script>
 <script src="js/path.js?v=1"></script>
 </body>
 </html>
