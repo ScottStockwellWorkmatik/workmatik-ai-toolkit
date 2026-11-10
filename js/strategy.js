@@ -36,7 +36,7 @@
     var rows = rowsOf(ws).filter(function (r) { return String(r['Activity ID']).trim(); }).map(function (r) {
       return { id: String(r['Activity ID']).trim(), rid: String(r['Role ID']).trim(), group: String(r['Group']), role: String(r['Role']), task: String(r['Task']), activity: String(r['Activity']), cls: String(r['AI Suitability Classification']), custom: /^AC/.test(String(r['Activity ID'])) };
     });
-    return { kind: 'roles', org: String(d['Organisation'] || ''), date: serialToIso(d['Exported']), rows: rows };
+    return { kind: 'roles', kv: d, org: String(d['Organisation'] || ''), date: serialToIso(d['Exported']), rows: rows };
   }
   function wfCaps(sc, tier) {
     var out = [];
@@ -50,6 +50,11 @@
   function parseWorkflow(wb) {
     var ws = wb.Sheets['Scoring'], sm = kv(wb.Sheets['Summary']);
     var tv = parseFloat(sm['Value is high above']) || 3, tf = parseFloat(sm['Feasibility is high above']) || 3, rows = [], unscored = 0, off = 0;
+    var stepRoles = {};
+    if (wb.Sheets['Steps']) rowsOf(wb.Sheets['Steps']).forEach(function (r) {
+      if (String(r['Included']).toUpperCase() === 'N' || !String(r['Role'] || '').trim()) return;
+      var k = normWfId(r['Workflow ID']); (stepRoles[k] = stepRoles[k] || {})[String(r['Role']).trim()] = 1;
+    });
     rowsOf(ws).forEach(function (row) {
       if (String(row['Included']).toUpperCase() === 'N') { off++; return; }
       var sc = {}, got = 0; ['V1', 'V2', 'F1', 'F2', 'F3', 'R1', 'R2'].forEach(function (k) { var n = parseInt(row[k], 10); if (n >= 1 && n <= 5) { sc[k] = n; got++; } });
@@ -57,9 +62,9 @@
       var tier = String(row['EU AI Act tier'] || 'minimal').trim();
       var v = (sc.V1 + sc.V2) / 2, f = (sc.F1 + sc.F2 + sc.F3) / 3, r = (sc.R1 + sc.R2) / 2;
       var quad = tier === 'prohibited' ? 'prohibited' : (v > tv && f > tf) ? 'start' : (v > tv) ? 'prepare' : (f > tf) ? 'quick' : 'park';
-      rows.push({ id: normWfId(row['ID']), name: String(row['Workflow']), group: String(row['Group'] || ''), own: String(row['Source']).toLowerCase() === 'own', v: v, f: f, r: r, tier: tier, quad: quad, priority: Math.round(v * f / 25 * 100 * (1 - 0.1 * (r - 1))), caps: wfCaps(sc, tier) });
+      rows.push({ id: normWfId(row['ID']), name: String(row['Workflow']), group: String(row['Group'] || ''), own: String(row['Source']).toLowerCase() === 'own', v: v, f: f, r: r, tier: tier, quad: quad, priority: Math.round(v * f / 25 * 100 * (1 - 0.1 * (r - 1))), caps: wfCaps(sc, tier), supports: String(row['Supports'] || '').split(/[;,]/).map(function (x) { return x.trim(); }).filter(Boolean), roles: Object.keys(stepRoles[normWfId(row['ID'])] || {}) });
     });
-    return { kind: 'workflow', org: String(sm['Organisation or function'] || ''), date: serialToIso(sm['Assessment date']), rows: rows, unscored: unscored, off: off };
+    return { kind: 'workflow', kv: kv(wb.Sheets['Workmatik data']), org: String(sm['Organisation or function'] || ''), date: serialToIso(sm['Assessment date']), rows: rows, unscored: unscored, off: off };
   }
   function parseCapability(wb) {
     var ws = wb.Sheets['Scoring'], sm = kv(wb.Sheets['Summary']), scores = {}, oos = {}, n = 0;
@@ -68,13 +73,13 @@
       var s = parseInt(r['Score (1-5)'], 10); if (s >= 1 && s <= 5) { scores[id] = s; n++; }
       if (String(r['Out of scope']).toUpperCase() === 'Y') oos[id] = true;
     });
-    return { kind: 'capability', org: String(sm['Organisation or function'] || ''), date: serialToIso(sm['Assessment date']), scores: scores, oos: oos, n: n };
+    return { kind: 'capability', kv: kv(wb.Sheets['Workmatik data']), org: String(sm['Organisation or function'] || ''), date: serialToIso(sm['Assessment date']), scores: scores, oos: oos, n: n };
   }
   function parseSkills(wb) {
     var m = kv(wb.Sheets['Meta']), scores = [];
     var by = {}; XLSX.utils.sheet_to_json(wb.Sheets['Assessment'], { header: 1, defval: '' }).forEach(function (r, i) { if (i === 0) return; var id = Number(r[0]), s = Number(r[2]); if (Number.isInteger(id) && Number.isInteger(s) && s >= 0 && s <= 4) by[id] = s; });
     for (var i = 0; i < REF.skillDomains.length; i++) { if (by[i] === undefined) throw new Error('missing domain'); scores.push(by[i]); }
-    return { kind: 'skills', org: String(m['Team'] || ''), name: String(m['Name'] || ''), rater: String(m['Rater type'] || ''), date: serialToIso(m['Date']), scores: scores };
+    return { kind: 'skills', kv: kv(wb.Sheets['Workmatik data']), org: String(m['Team'] || ''), name: String(m['Name'] || ''), rater: String(m['Rater type'] || ''), date: serialToIso(m['Date']), scores: scores };
   }
   function parseMap(wb) {
     var rows = rowsOf(wb.Sheets['Data']), out = [], org = '';
@@ -84,7 +89,7 @@
       out.push({ id: ms.id, tag: tag, title: String(r['Skill Title']), rank: parseInt(r['Organisation Rank'], 10), cov: parseInt(r['Coverage'], 10) });
     });
     if (!out.length) throw new Error('no skills');
-    return { kind: 'map', org: org, date: '', rows: out };
+    return { kind: 'map', kv: kv(wb.Sheets['Workmatik data']), org: org, date: '', rows: out };
   }
   function detect(wb) {
     var S = wb.Sheets;
@@ -111,6 +116,9 @@
         return readBuf(f).then(function (buf) {
           var p; try { p = detect(XLSX.read(buf, { type: 'array' })); } catch (e) { msgs.appendChild(el('li', 'bad', f.name + ' was not recognised as a file from a Workmatik tool.')); return; }
           p.file = f.name;
+          var fk = Object.assign({}, p.kv || {}); if (!fk['Organisation'] && p.kind !== 'skills') fk['Organisation'] = p.org;
+          var chk = Workmatik.check(fk); Workmatik.prefillFrom(fk);
+          if (!chk.ok) msgs.appendChild(el('li', 'bad', 'Check: ' + f.name + ' was loaded, but ' + chk.message));
           if (p.kind === 'skills') {
             if (F.skills.some(function (s) { return s.file === p.file && s.name === p.name && s.rater === p.rater && s.date === p.date; })) { msgs.appendChild(el('li', 'bad', f.name + ' is already loaded.')); return; }
             F.skills.push(p);
@@ -122,7 +130,7 @@
         });
       });
     });
-    chain.then(function () { renderFiles(); if (!$('panel-strategy').hidden) renderStrategy(); });
+    chain.then(function () { renderFiles(); if (!$('panel-roadmap').hidden) renderRoadmap(); });
   }
   function loadedItems() {
     var out = [];
@@ -204,12 +212,45 @@
     }
     out.mapGaps = null;
     if (F.map) out.mapGaps = F.map.rows.slice().sort(function (a, b) { return a.rank - b.rank; }).map(function (r) { return { r: r, gap: r.rank <= R.rank && r.cov <= R.cov }; });
+    out.strat = buildStrategy(out);
+    if (out.strat) out.workflows.sort(function (a, b) { return (out.strat.wfRank[a.w.id] || 99) - (out.strat.wfRank[b.w.id] || 99); });
     // consistency
     var orgs = {}; loadedItems().forEach(function (p) { if (p.org && p.kind !== 'skills') orgs[p.org.toLowerCase()] = p.org; });
     if (Object.keys(orgs).length > 1) out.warnings.push('The files name different organisations or functions (' + Object.keys(orgs).map(function (k) { return orgs[k]; }).join('; ') + '). Check they belong together.');
     if (wf && !cap) out.warnings.push('No capability file is loaded, so no workflow is held back for a weak capability. Load the AI Capability Assessment file to test readiness.');
     if (cap && !wf) out.warnings.push('No workflow file is loaded, so capabilities cannot be linked to workflows.');
     return out;
+  }
+
+  // ---------- strategy join
+  function buildStrategy(C) {
+    var SM = window.WorkmatikStrategy; if (!SM) return null;
+    var ms = SM.ranked(); if (!ms.length) return null;
+    var st = SM.state(), rowL = {}, colL = {};
+    st.rows.forEach(function (r) { rowL[r.id] = r.label; }); st.cols.forEach(function (c) { colL[c.id] = c.label; });
+    var items = ms.map(function (m) { return { m: m, where: (rowL[m.row] || '') + ' · ' + (colL[m.col] || ''), wfs: [], caps: {}, doms: {}, roles: {} }; });
+    var byId = {}; items.forEach(function (i) { byId[i.m.id] = i; });
+    var wfRank = {}, capRank = {}, domRank = {};
+    C.workflows.forEach(function (x) {
+      (x.w.supports || []).forEach(function (id) {
+        var it = byId[id]; if (!it) return;
+        it.wfs.push(x); wfRank[x.w.id] = Math.min(wfRank[x.w.id] || 99, it.m.rank);
+        (x.w.roles || []).forEach(function (r) { it.roles[r] = 1; });
+        x.blockers.forEach(function (b) {
+          it.caps[b.id] = b; capRank[b.id] = Math.min(capRank[b.id] || 99, it.m.rank);
+          var c = capById(b.id); if (!c) return;
+          (REF.catToDomains[String(c.cat)] || []).forEach(function (d) { it.doms[d] = 1; domRank[d] = Math.min(domRank[d] || 99, it.m.rank); });
+        });
+      });
+    });
+    var hasWf = !!F.workflow, flags = {};
+    if (hasWf) {
+      flags.noWorkflow = items.filter(function (i) { return !i.wfs.length; }).length;
+      flags.wfNotLinked = C.workflows.filter(function (x) { return x.wave !== 'hold-prohibited' && !wfRank[x.w.id]; }).length;
+      flags.capNotLinked = C.foundations.filter(function (f) { return !capRank[f.cap.id]; }).length;
+    }
+    if (C.domains) flags.domNotLinked = C.domains.filter(function (d) { return d.gap && !domRank[d.d.id]; }).length;
+    return { items: items, wfRank: wfRank, capRank: capRank, domRank: domRank, flags: flags, purpose: st.purpose || '', hasWf: hasWf };
   }
 
   // ---------- render
@@ -223,19 +264,41 @@
   function statusText(s) { return s === 'weak' ? 'weak' : s === 'unscored' ? 'not yet scored' : s === 'oos' ? 'out of scope' : s === 'ok' ? 'ok' : 'not checked'; }
   var WAVES = [['now', 'Start now'], ['next', 'Start next'], ['quick', 'Quick wins'], ['fix', 'Fix first, then build'], ['hold', 'Hold'], ['hold-prohibited', 'Do not proceed']];
 
-  function renderStrategy() {
-    var host = $('strategyBody'); host.textContent = '';
-    var items = loadedItems(); $('strategyEmpty').hidden = items.length > 0; host.hidden = !items.length; if (!items.length) return;
+  function renderRoadmap() {
+    var host = $('roadmapBody'); host.textContent = '';
+    var items = loadedItems(), hasStrat = !!(window.WorkmatikStrategy && window.WorkmatikStrategy.ranked().length); $('roadmapEmpty').hidden = items.length > 0 || hasStrat; host.hidden = !(items.length || hasStrat); if (!items.length && !hasStrat) return;
     var C = compute(); window.__last = C;
     var cards = el('div', 'summary-grid');
     function metric(l, v) { var m = el('div', 'metric'); m.appendChild(el('div', 'label', l)); m.appendChild(el('div', 'val', String(v))); cards.appendChild(m); }
     metric('Files loaded', items.length);
+    if (C.strat) metric('Tracked priorities', C.strat.items.length);
     if (F.roles) metric('Activities in scope', F.roles.rows.length);
     if (F.workflow) { metric('Start now', C.workflows.filter(function (x) { return x.wave === 'now'; }).length); metric('Fix first', C.workflows.filter(function (x) { return x.wave === 'fix'; }).length); }
     if (F.capability) metric('Foundations to fix', C.foundations.length);
     if (C.domains) metric('Skill domain gaps', C.domains.filter(function (d) { return d.gap; }).length);
     host.appendChild(cards);
     C.warnings.forEach(function (w) { var b = el('div', 'flagbox'); b.appendChild(el('strong', null, 'Check. ')); b.appendChild(document.createTextNode(w)); host.appendChild(b); });
+
+    if (C.strat) {
+      var P = C.strat, sp = section('Priorities and what supports them', 'From the Strategy tab. Each tracked priority is traced to the workflows you tagged to it, then to the capabilities, skill domains and roles those workflows depend on.');
+      if (P.purpose) sp.appendChild(el('p', null, 'Purpose: ' + P.purpose));
+      var fl = [];
+      if (P.hasWf) {
+        if (P.flags.noWorkflow) fl.push(plural(P.flags.noWorkflow, 'priority has', 'priorities have') + ' no workflow support planned');
+        if (P.flags.wfNotLinked) fl.push(plural(P.flags.wfNotLinked, 'workflow is', 'workflows are') + ' not linked to purpose');
+        if (P.flags.capNotLinked) fl.push(plural(P.flags.capNotLinked, 'foundation capability is', 'foundation capabilities are') + ' not linked to purpose');
+      } else fl.push('No workflow file is loaded, so the support for each priority cannot be shown yet');
+      if (P.flags.domNotLinked) fl.push(plural(P.flags.domNotLinked, 'skill domain gap is', 'skill domain gaps are') + ' not linked to purpose');
+      if (fl.length) { var fb = el('div', 'flagbox'); fb.appendChild(el('strong', null, 'Check. ')); fb.appendChild(document.createTextNode(fl.join('; ') + '.')); sp.appendChild(fb); }
+      var wlab = {}; WAVES.forEach(function (w) { wlab[w[0]] = w[1]; });
+      sp.appendChild(table(['Priority', 'Measure', 'Workflows', 'Capabilities needed', 'Skill domains', 'Roles'], P.items.map(function (i) {
+        return [i.m.rank, (i.m.name || i.m.id) + ' (' + i.m.id + ', ' + i.where + ')',
+          i.wfs.length ? i.wfs.map(function (x) { return x.w.name + ' [' + wlab[x.wave] + ']'; }).join('; ') : (P.hasWf ? 'No workflow support planned' : ''),
+          Object.keys(i.caps).map(function (id) { var b = i.caps[id]; return id + (b.status === 'weak' ? ' (weak)' : ''); }).join(', '),
+          Object.keys(i.doms).join(', '), Object.keys(i.roles).join('; ')];
+      }), [0], [8, 26, 26, 16, 10, 14]));
+      host.appendChild(sp);
+    }
 
     if (F.roles) {
       var g = {}; F.roles.rows.forEach(function (r) { var k = r.group || 'Other'; g[k] = g[k] || { n: 0, fa: 0, au: 0, ho: 0, roles: {} }; g[k].n++; g[k].roles[r.role] = 1; if (r.cls === 'Full automation') g[k].fa++; else if (r.cls === 'Augmentation') g[k].au++; else if (r.cls === 'Human only') g[k].ho++; });
@@ -252,10 +315,10 @@
       WAVES.forEach(function (wv) {
         var list = C.workflows.filter(function (x) { return x.wave === wv[0]; }); if (!list.length) return;
         s2.appendChild(el('h3', null, wv[1] + ' (' + list.length + ')'));
-        s2.appendChild(table(['Workflow', 'ID', 'Priority', 'Group', wv[0] === 'fix' ? 'Held up by' : 'Capabilities to watch'], list.map(function (x) {
+        s2.appendChild(table(['Workflow', 'ID', 'Supports priority', 'Priority score', 'Group', wv[0] === 'fix' ? 'Held up by' : 'Capabilities to watch'], list.map(function (x) {
           var by = wv[0] === 'fix' ? x.weak.map(function (b) { return b.id; }) : x.blockers.map(function (b) { return b.id + ' (' + statusText(b.status) + ')'; });
-          return [x.w.name + (x.w.own ? ' (your own)' : ''), x.w.id, x.w.quad === 'prohibited' ? '–' : x.w.priority, REF.quadrants[x.w.quad], by.length ? by.join(', ') : (wv[0] === 'fix' ? 'Low feasibility, no capability gap flagged' : 'None flagged')];
-        }), [2], [32, 8, 9, 14, 37]));
+          return [x.w.name + (x.w.own ? ' (your own)' : ''), x.w.id, C.strat && C.strat.wfRank[x.w.id] ? C.strat.wfRank[x.w.id] : '', x.w.quad === 'prohibited' ? '–' : x.w.priority, REF.quadrants[x.w.quad], by.length ? by.join(', ') : (wv[0] === 'fix' ? 'Low feasibility, no capability gap flagged' : 'None flagged')];
+        }), [2, 3], [28, 7, 10, 9, 13, 33]));
       });
       host.appendChild(s2);
     }
@@ -280,7 +343,7 @@
       }
       host.appendChild(s4);
     }
-    var act = el('div', 'actions'); var b = el('button', 'btn primary', 'Download strategy (XLSX)'); b.type = 'button'; b.addEventListener('click', download); act.appendChild(b); host.appendChild(act);
+    var act = el('div', 'actions'); var b = el('button', 'btn primary', 'Download roadmap (XLSX)'); b.type = 'button'; b.addEventListener('click', download); act.appendChild(b); host.appendChild(act);
   }
 
   // ---------- download
@@ -289,16 +352,21 @@
     items.forEach(function (p) { if (!org && p.org && p.kind !== 'skills') org = p.org; });
     var today = new Date().toISOString().slice(0, 10);
     var out = [];
-    var sum = [['AI Strategy View'], ['Organisation or function', org], ['Date', today], [], ['Start now', C.workflows.filter(function (x) { return x.wave === 'now'; }).length], ['Start next', C.workflows.filter(function (x) { return x.wave === 'next'; }).length], ['Quick wins', C.workflows.filter(function (x) { return x.wave === 'quick'; }).length], ['Fix first', C.workflows.filter(function (x) { return x.wave === 'fix'; }).length], ['Foundations to fix', C.foundations.length], [], ['Generated in the browser by the Workmatik AI Strategy View. The rules and thresholds are the author’s draft judgement.']];
+    var sum = [['AI Roadmap'], ['Organisation or function', org], ['Business unit', Workmatik.get().unit], ['Date', today], [], ['Start now', C.workflows.filter(function (x) { return x.wave === 'now'; }).length], ['Start next', C.workflows.filter(function (x) { return x.wave === 'next'; }).length], ['Quick wins', C.workflows.filter(function (x) { return x.wave === 'quick'; }).length], ['Fix first', C.workflows.filter(function (x) { return x.wave === 'fix'; }).length], ['Foundations to fix', C.foundations.length], [], ['Generated in the browser by the Workmatik AI Strategy View. The rules and thresholds are the author’s draft judgement.']];
     C.warnings.forEach(function (w) { sum.push(['Check', w]); });
     out.push(['Summary', sum, [30, 90]]);
-    out.push(['Workmatik data', [['Field', 'Value'], ['Tool', 'Workmatik AI Strategy View'], ['Tool key', 'strategy'], ['Data version', REF.version], ['Schema', 'workmatik-shared-ids-1'], ['Organisation', org], ['Date', today], ['Capability weak at or below', C.R.cap], ['Workflows to start first', C.R.first], ['Skill domain gap at or below', C.R.skill]], [30, 60]]);
+    out.push(['Workmatik data', Workmatik.metaRows('Workmatik AI Roadmap', 'roadmap', REF.version, [['Capability weak at or below', C.R.cap], ['Workflows to start first', C.R.first], ['Skill domain gap at or below', C.R.skill]]), [30, 60]]);
     var files = [['Tool', 'File', 'Organisation or team', 'Date', 'What it holds']]; items.forEach(function (p) { files.push([LABEL[p.kind], p.file, p.org, p.date, detailOf(p)]); });
     out.push(['Files used', files, [28, 44, 28, 14, 40]]);
     if (F.workflow) {
-      var seq = [['Wave', 'Workflow ID', 'Workflow', 'Group', 'Priority', 'Capabilities flagged', 'Held up by']];
-      WAVES.forEach(function (wv) { C.workflows.filter(function (x) { return x.wave === wv[0]; }).forEach(function (x) { seq.push([wv[1], x.w.id, x.w.name, REF.quadrants[x.w.quad], x.w.quad === 'prohibited' ? '' : x.w.priority, x.blockers.map(function (b) { return b.id + ' (' + statusText(b.status) + ')'; }).join('; '), x.weak.map(function (b) { return b.id; }).join('; ')]); }); });
-      out.push(['Sequence', seq, [22, 12, 44, 18, 9, 50, 24]]);
+      var seq = [['Wave', 'Workflow ID', 'Workflow', 'Supports priority', 'Group', 'Priority score', 'Capabilities flagged', 'Held up by']];
+      WAVES.forEach(function (wv) { C.workflows.filter(function (x) { return x.wave === wv[0]; }).forEach(function (x) { seq.push([wv[1], x.w.id, x.w.name, C.strat && C.strat.wfRank[x.w.id] ? C.strat.wfRank[x.w.id] : '', REF.quadrants[x.w.quad], x.w.quad === 'prohibited' ? '' : x.w.priority, x.blockers.map(function (b) { return b.id + ' (' + statusText(b.status) + ')'; }).join('; '), x.weak.map(function (b) { return b.id; }).join('; ')]); }); });
+      out.push(['Sequence', seq, [22, 12, 44, 12, 18, 9, 50, 24]]);
+      if (C.strat) {
+        var pr = [['Priority', 'Measure ID', 'Measure', 'Where', 'Workflows', 'Capabilities', 'Skill domains', 'Roles']];
+        C.strat.items.forEach(function (i) { pr.push([i.m.rank, i.m.id, i.m.name, i.where, i.wfs.map(function (x) { return x.w.id + ' ' + x.w.name; }).join('; ') || (C.strat.hasWf ? 'No workflow support planned' : ''), Object.keys(i.caps).join('; '), Object.keys(i.doms).join('; '), Object.keys(i.roles).join('; ')]); });
+        out.splice(2, 0, ['Priorities', pr, [9, 11, 40, 36, 60, 28, 20, 40]]);
+      }
     }
     if (F.capability || C.foundations.length) {
       var fd = [['Capability ID', 'Capability', 'Phase', 'Your score', 'Workflows held up']]; C.foundations.forEach(function (f) { fd.push([f.cap.id, f.cap.name, REF.phases[f.cap.phase], F.capability ? F.capability.scores[f.cap.id] : '', f.wfs.map(function (w) { return w.id + ' ' + w.name; }).join('; ')]); });
@@ -317,10 +385,11 @@
     return out;
   }
   function download() {
-    var C = compute(), sh = sheets(C), fname = 'AI_Strategy_View_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    if (!Workmatik.requireOrg()) return;
+    var C = compute(), sh = sheets(C), fname = Workmatik.fileName('roadmap');
     function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); }
     if (typeof ExcelJS === 'undefined') { fallback(); return; }
-    var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Strategy View';
+    var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Roadmap';
     sh.forEach(function (s) {
       var ws = wb.addWorksheet(s[0]); s[1].forEach(function (r) { ws.addRow(r); }); s[2].forEach(function (w, i) { ws.getColumn(i + 1).width = w; }); ws.eachRow(function (row) { row.alignment = { vertical: 'top', wrapText: true }; });
       if (s[0] === 'Summary') ws.getRow(1).font = { bold: true, size: 14 };
@@ -343,10 +412,11 @@
     [['Where AI applies', 'AI Roles Assessment', 'Role IDs and activity IDs'], ['Suggested sequence', 'AI Workflow Assessment (and the AI Capability Assessment to test readiness)', 'Workflow IDs, capability IDs'], ['Foundations to fix first', 'AI Capability Assessment and AI Workflow Assessment', 'Capability IDs'], ['Skills to build', 'AI Skills Assessment and/or Marketing Skills Map', 'Skill domain IDs (SD01 to SD06), skill IDs (MS01 to MS10)']].forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', null, c)); }); b2.appendChild(tr); });
     f.appendChild(b2);
   }
-  var TABS = ['path', 'files', 'strategy', 'journey', 'framework', 'rules', 'guide'];
+  var TABS = ['path', 'strategy', 'files', 'roadmap', 'journey', 'framework', 'rules', 'guide'];
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
-    if (name === 'strategy') renderStrategy();
+    if (name === 'roadmap') renderRoadmap();
+    if (name === 'strategy' && window.__renderStrategyTab) window.__renderStrategyTab();
     if (name === 'journey') { var fr = $('frame-' + name); if (!fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src')); }
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     window.scrollTo(0, 0);
@@ -358,7 +428,8 @@
   });
   function init() {
     $('fwVersion').textContent = REF.version;
-    var d = { rCap: 2, rFirst: 3, rSkill: 1.5, rRank: 5, rCov: 4 }; Object.keys(d).forEach(function (k) { $(k).value = d[k]; $(k).addEventListener('input', function () { if (!$('panel-strategy').hidden) renderStrategy(); }); });
+    Workmatik.renderOrgBlock($('orgBlock'));
+    var d = { rCap: 2, rFirst: 3, rSkill: 1.5, rRank: 5, rCov: 4 }; Object.keys(d).forEach(function (k) { $(k).value = d[k]; $(k).addEventListener('input', function () { if (!$('panel-roadmap').hidden) renderRoadmap(); }); });
     renderRules(); renderFiles();
     TABS.forEach(function (t, i) {
       $('tab-' + t).addEventListener('click', function () { showTab(t); });
@@ -370,7 +441,7 @@
     ['dragenter', 'dragover'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('over'); }); });
     dz.addEventListener('drop', function (e) { loadFiles(e.dataTransfer.files); });
-    $('btnGoStrategy').addEventListener('click', function () { showTab('strategy'); });
+    $('btnGoRoadmap').addEventListener('click', function () { showTab('roadmap'); });
     $('btnClear').addEventListener('click', function () { F = { roles: null, workflow: null, capability: null, map: null, skills: [] }; $('loadMessages').textContent = ''; renderFiles(); });
   }
 })();

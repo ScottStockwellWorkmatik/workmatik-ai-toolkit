@@ -25,3 +25,27 @@
 .tk-frame{width:100%;min-height:600px;border:0;display:block}
 
 #panel-journey{width:min(1240px,calc(100vw - 40px));position:relative;left:50%;transform:translateX(-50%)}
+
+/* Strategy tab */
+.sm-purpose{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-top:6px;box-sizing:border-box}
+.sm-table{border-collapse:separate;border-spacing:8px;width:100%;table-layout:fixed;min-width:900px}
+.sm-table th{text-align:left;vertical-align:top;font-weight:600;background:none;color:var(--ink);border:0;padding:0}
+.sm-table th input{width:100%;font:inherit;font-weight:600;padding:6px 8px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;box-sizing:border-box;background:#fff;color:var(--ink)}
+.sm-table th:first-child,.sm-table .sm-rowhead{width:170px}
+.sm-table th:last-child{width:110px}
+.sm-table td{background:none}
+.sm-cell{vertical-align:top;border:1px dashed var(--grey);border-radius:10px;padding:8px}
+.sm-spacer{border:0;padding:0}
+.sm-measure{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px;background:#fff}
+.sm-measure.tracked{border-color:var(--navy);background:var(--pale)}
+.sm-top{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sm-id{font-size:12px;color:var(--muted);font-weight:600}
+.sm-rank{font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.sm-rank select{font:inherit;padding:2px 4px;min-width:96px}
+.sm-field{display:block;margin-bottom:6px;min-width:0}
+.sm-lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sm-field input{width:100%;font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;box-sizing:border-box;min-width:0}
+.sm-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sm-three .sm-field{margin-bottom:0}
+.sm-ranked{margin:6px 0 0;padding-left:22px}
+.sm-ranked li{margin-bottom:6px}
