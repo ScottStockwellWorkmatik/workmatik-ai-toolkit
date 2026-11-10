@@ -20,14 +20,9 @@
   }
   var S = fresh();
 
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-  function load() {
-    try {
-      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (v && Array.isArray(v.rows) && Array.isArray(v.cols) && Array.isArray(v.measures)) { S = v; S.next = S.next || { measure: 1, row: 1, col: 1 }; }
-    } catch (e) { S = fresh(); }
-  }
-
+  // Nothing is kept in the browser. Work lives on the page until it is downloaded, so one client's strategy never shows up for the next.
+  var dirty = false;
+  function save() { dirty = true; }
   // ---------- ranks
   function ranked() { return S.measures.filter(function (m) { return m.rank >= 1; }).sort(function (a, b) { return a.rank - b.rank; }); }
   function renumber() { ranked().forEach(function (m, i) { m.rank = i + 1; }); }
@@ -158,7 +153,7 @@
   function download() {
     if (!Workmatik.requireOrg()) return;
     var sh = sheets(), fname = Workmatik.fileName('strategy');
-    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); }
+    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; }
     if (typeof ExcelJS === 'undefined') { fallback(); return; }
     var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Strategy';
     sh.forEach(function (s) {
@@ -169,7 +164,7 @@
     });
     wb.xlsx.writeBuffer().then(function (buf) {
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); dirty = false; setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }).catch(fallback);
   }
   function kvOf(ws) { var o = {}; if (ws) XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).forEach(function (r) { if (r[0] !== '' && r[0] !== 'Field') o[String(r[0])] = r[1]; }); return o; }
@@ -201,7 +196,7 @@
     var chk = Workmatik.check(p.kv);
     if (!chk.ok && !window.confirm(chk.message + ' Load it anyway? The page will switch to the file\'s organisation.')) { msgs.appendChild(el('li', 'bad', 'Not loaded: ' + name + ' is for a different organisation or business unit.')); return false; }
     Workmatik.set({ org: p.kv['Organisation'] || Workmatik.get().org, unit: p.kv['Business unit'] || '', by: p.kv['Prepared by'] || Workmatik.get().by });
-    S = p.state; renumber(); save(); $('strategyPurpose').value = S.purpose; render();
+    S = p.state; renumber(); dirty = false; $('strategyPurpose').value = S.purpose; render();
     msgs.appendChild(el('li', 'ok', name + ' loaded into the Strategy tab: ' + S.measures.length + ' measure' + (S.measures.length === 1 ? '' : 's') + ', ' + ranked().length + ' tracked.'));
     return true;
   }
@@ -214,7 +209,8 @@
   function isStrategyBook(wb) { return !!(wb.Sheets['Measures'] && wb.Sheets['Rows'] && wb.Sheets['Columns']); }
 
   function init() {
-    load();
+    try { localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ }
+    window.addEventListener('beforeunload', function (e) { if (dirty && (S.purpose || S.measures.length)) { e.preventDefault(); e.returnValue = ''; } });
     var pu = $('strategyPurpose'); pu.value = S.purpose || '';
     pu.addEventListener('input', function () { S.purpose = pu.value; save(); });
     $('btnStrategyDownload').addEventListener('click', download);
@@ -222,7 +218,7 @@
     $('strategyFile').addEventListener('change', function (e) { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ''; });
     $('btnStrategyClear').addEventListener('click', function () {
       if (!window.confirm('Clear the purpose, matrix and priorities? Download first if you want to keep them.')) return;
-      S = fresh(); save(); pu.value = ''; $('strategyMessages').textContent = ''; render();
+      S = fresh(); dirty = false; pu.value = ''; $('strategyMessages').textContent = ''; render();
     });
     render();
   }
