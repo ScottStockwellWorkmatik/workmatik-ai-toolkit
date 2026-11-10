@@ -22,7 +22,7 @@
 
   // Nothing is kept in the browser. Work lives on the page until it is downloaded, so one client's strategy never shows up for the next.
   var dirty = false;
-  function save() { dirty = true; }
+  function save() { dirty = true; if (typeof renderNext === 'function') renderNext(); }
   // ---------- ranks
   function ranked() { return S.measures.filter(function (m) { return m.rank >= 1; }).sort(function (a, b) { return a.rank - b.rank; }); }
   function renumber() { ranked().forEach(function (m, i) { m.rank = i + 1; }); }
@@ -89,6 +89,24 @@
     c.appendChild(g);
     return c;
   }
+
+  var WF_URL = 'https://scottstockwellworkmatik.github.io/ai-workflow-assessment/';
+  function renderNext() {
+    var host = $('strategyNext'); if (!host) return; host.textContent = '';
+    if (!ranked().length) { host.hidden = true; return; }
+    host.hidden = false;
+    host.appendChild(el('h3', null, 'Strategy done? Next, choose the work that delivers it'));
+    host.appendChild(el('p', 'hint', dirty
+      ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
+      : 'Your strategy file is downloaded. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+    var act = el('div', 'actions');
+    var go = el('a', 'btn primary', 'Start the AI Workflow Assessment'); go.href = WF_URL; go.target = '_blank'; go.rel = 'noopener';
+    var back = el('button', 'btn', 'Back to the Path'); back.type = 'button';
+    back.addEventListener('click', function () { if (window.__toolkitShowTab) window.__toolkitShowTab('path'); });
+    act.appendChild(go); act.appendChild(back); host.appendChild(act);
+    host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your strategy. Nothing is stored in the browser, so keep this tab open until you have downloaded the file.'));
+  }
+
   function render() {
     var host = $('strategyMatrix'); if (!host) return; host.textContent = '';
     var t = el('table', 'sm-table'), hr = el('tr'); hr.appendChild(el('th', null, ''));
@@ -119,6 +137,7 @@
     renderRanked();
   }
   function renderRanked() {
+    renderNext();
     var host = $('strategyRanked'); if (!host) return; host.textContent = '';
     var list = ranked();
     if (!list.length) { host.appendChild(el('p', 'empty', 'Nothing is tracked yet. Choose a priority number on the measures you want to carry through the other tools.')); return; }
@@ -164,7 +183,7 @@
     });
     wb.xlsx.writeBuffer().then(function (buf) {
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); dirty = false; setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); dirty = false; renderNext(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }).catch(fallback);
   }
   function kvOf(ws) { var o = {}; if (ws) XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).forEach(function (r) { if (r[0] !== '' && r[0] !== 'Field') o[String(r[0])] = r[1]; }); return o; }
