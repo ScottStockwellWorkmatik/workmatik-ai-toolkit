@@ -114,7 +114,9 @@
         if (!/\.xlsx$/i.test(f.name)) { msgs.appendChild(el('li', 'bad', f.name + ' was skipped: only .xlsx files are accepted.')); return; }
         if (f.size > 5 * 1024 * 1024) { msgs.appendChild(el('li', 'bad', f.name + ' was skipped: larger than 5 MB.')); return; }
         return readBuf(f).then(function (buf) {
-          var p; try { p = detect(XLSX.read(buf, { type: 'array' })); } catch (e) { msgs.appendChild(el('li', 'bad', f.name + ' was not recognised as a file from a Workmatik tool.')); return; }
+          var wbk = null; try { wbk = XLSX.read(buf, { type: 'array' }); } catch (e) {}
+          if (wbk && window.WorkmatikStrategy && window.WorkmatikStrategy.isStrategyBook(wbk)) { window.WorkmatikStrategy.importBuffer(buf, f.name, msgs); return; }
+          var p; try { p = detect(wbk || XLSX.read(buf, { type: 'array' })); } catch (e) { msgs.appendChild(el('li', 'bad', f.name + ' was not recognised as a file from a Workmatik tool.')); return; }
           p.file = f.name;
           var fk = Object.assign({}, p.kv || {}); if (!fk['Organisation'] && p.kind !== 'skills') fk['Organisation'] = p.org;
           var chk = Workmatik.check(fk); Workmatik.prefillFrom(fk);

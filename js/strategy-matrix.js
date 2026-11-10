@@ -84,7 +84,7 @@
     sel.value = String(m.rank >= 1 ? m.rank : 0);
     sel.addEventListener('change', function () { setRank(m, parseInt(sel.value, 10)); save(); render(); });
     rk.appendChild(sel); top.appendChild(rk);
-    var rm = el('button', 'btn small', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove measure ' + m.id); rm.addEventListener('click', function () { removeMeasure(m); }); top.appendChild(rm);
+    var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove measure ' + m.id); rm.addEventListener('click', function () { removeMeasure(m); }); top.appendChild(rm);
     c.appendChild(top);
     c.appendChild(field('Measure', m.name, function (v) { m.name = v; }, { placeholder: 'e.g. Pipeline created from target accounts', focusId: m.id }));
     var g = el('div', 'sm-three');
@@ -100,15 +100,15 @@
     S.cols.forEach(function (c) {
       var th = el('th'); var i = el('input'); i.type = 'text'; i.value = c.label; i.maxLength = 40; i.setAttribute('aria-label', 'Column name');
       i.addEventListener('input', function () { c.label = i.value; save(); renderRanked(); }); th.appendChild(i);
-      var rm = el('button', 'btn small', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove column ' + c.label); rm.addEventListener('click', function () { removeCol(c); }); th.appendChild(rm); hr.appendChild(th);
+      var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove column ' + c.label); rm.addEventListener('click', function () { removeCol(c); }); th.appendChild(rm); hr.appendChild(th);
     });
-    var addTh = el('th'); var ac = el('button', 'btn small', 'Add column'); ac.type = 'button'; ac.addEventListener('click', addCol); addTh.appendChild(ac); hr.appendChild(addTh);
+    var addTh = el('th'); var ac = el('button', 'btn small sm-addstruct', 'Add column'); ac.type = 'button'; ac.addEventListener('click', addCol); addTh.appendChild(ac); hr.appendChild(addTh);
     var thead = el('thead'); thead.appendChild(hr); t.appendChild(thead);
     var tb = el('tbody');
     S.rows.forEach(function (r) {
       var tr = el('tr'); var th = el('th', 'sm-rowhead'); var i = el('input'); i.type = 'text'; i.value = r.label; i.maxLength = 60; i.setAttribute('aria-label', 'Row name');
       i.addEventListener('input', function () { r.label = i.value; save(); renderRanked(); }); th.appendChild(i);
-      var rm = el('button', 'btn small', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove row ' + r.label); rm.addEventListener('click', function () { removeRow(r); }); th.appendChild(rm); tr.appendChild(th);
+      var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove row ' + r.label); rm.addEventListener('click', function () { removeRow(r); }); th.appendChild(rm); tr.appendChild(th);
       S.cols.forEach(function (c) {
         var td = el('td', 'sm-cell');
         S.measures.filter(function (m) { return m.row === r.id && m.col === c.id; }).forEach(function (m) { td.appendChild(measureCard(m)); });
@@ -118,7 +118,7 @@
       tr.appendChild(el('td', 'sm-spacer')); tb.appendChild(tr);
     });
     var addTr = el('tr'); var addTd = el('td'); addTd.colSpan = S.cols.length + 2;
-    var ar = el('button', 'btn small', 'Add row'); ar.type = 'button'; ar.addEventListener('click', addRow); addTd.appendChild(ar); addTr.appendChild(addTd); tb.appendChild(addTr);
+    var ar = el('button', 'btn small sm-addstruct', 'Add row'); ar.type = 'button'; ar.addEventListener('click', addRow); addTd.appendChild(ar); addTr.appendChild(addTd); tb.appendChild(addTr);
     t.appendChild(tb);
     var sc = el('div', 'table-scroll'); sc.appendChild(t); host.appendChild(sc);
     renderRanked();
@@ -195,19 +195,23 @@
     };
     return { state: out, kv: d };
   }
+  // Reads a strategy workbook already in memory. Used by the Strategy tab button and by the Files tab.
+  function importBuffer(buf, name, msgs) {
+    var p; try { p = parseFile(buf); } catch (e) { msgs.appendChild(el('li', 'bad', name + ' could not be read as a Workmatik strategy file, so it was not loaded.')); return false; }
+    var chk = Workmatik.check(p.kv);
+    if (!chk.ok && !window.confirm(chk.message + ' Load it anyway? The page will switch to the file\'s organisation.')) { msgs.appendChild(el('li', 'bad', 'Not loaded: ' + name + ' is for a different organisation or business unit.')); return false; }
+    Workmatik.set({ org: p.kv['Organisation'] || Workmatik.get().org, unit: p.kv['Business unit'] || '', by: p.kv['Prepared by'] || Workmatik.get().by });
+    S = p.state; renumber(); save(); $('strategyPurpose').value = S.purpose; render();
+    msgs.appendChild(el('li', 'ok', name + ' loaded into the Strategy tab: ' + S.measures.length + ' measure' + (S.measures.length === 1 ? '' : 's') + ', ' + ranked().length + ' tracked.'));
+    return true;
+  }
   function loadFile(file) {
     var msgs = $('strategyMessages'); msgs.textContent = '';
     var rd = new FileReader();
-    rd.onload = function () {
-      var p; try { p = parseFile(rd.result); } catch (e) { msgs.appendChild(el('li', 'bad', 'That file could not be read as a Workmatik strategy file, so it was not loaded.')); return; }
-      var chk = Workmatik.check(p.kv);
-      if (!chk.ok && !window.confirm(chk.message + ' Load it anyway? The page will switch to the file\'s organisation.')) { msgs.appendChild(el('li', 'bad', 'Not loaded: the file is for a different organisation or business unit.')); return; }
-      Workmatik.set({ org: p.kv['Organisation'] || Workmatik.get().org, unit: p.kv['Business unit'] || '' });
-      S = p.state; renumber(); save(); $('strategyPurpose').value = S.purpose; render();
-      msgs.appendChild(el('li', 'ok', file.name + ' loaded: ' + S.measures.length + ' measure' + (S.measures.length === 1 ? '' : 's') + ', ' + ranked().length + ' tracked.'));
-    };
+    rd.onload = function () { importBuffer(rd.result, file.name, msgs); };
     rd.readAsArrayBuffer(file);
   }
+  function isStrategyBook(wb) { return !!(wb.Sheets['Measures'] && wb.Sheets['Rows'] && wb.Sheets['Columns']); }
 
   function init() {
     load();
@@ -222,7 +226,7 @@
     });
     render();
   }
-  window.WorkmatikStrategy = { state: function () { return S; }, ranked: ranked, measure: byId, render: render };
+  window.WorkmatikStrategy = { state: function () { return S; }, ranked: ranked, measure: byId, render: render, importBuffer: importBuffer, isStrategyBook: isStrategyBook };
   window.__renderStrategyTab = render;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
