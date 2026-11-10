@@ -25,8 +25,8 @@
       needs: 'Any combination of the files from steps 1 to 6. Your strategy is read from the Strategy tab.', gives: 'An on-screen roadmap and an Excel download.', next: 'Use the sequence to plan. The Journey Map shows how to build each foundation.' }
   ];
   var KEY = 'workmatik-toolkit-progress-1', done = {};
-  function load() { try { var v = JSON.parse(localStorage.getItem(KEY) || '{}'); if (v && typeof v === 'object') done = v; } catch (e) { done = {}; } }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} }
+  function load() { try { localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ } }
+  function save() { /* progress ticks are kept on the page only */ }
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   function io(label, text) { var d = el('div'); d.appendChild(el('dt', null, label)); d.appendChild(el('dd', null, text)); return d; }
   function render() {

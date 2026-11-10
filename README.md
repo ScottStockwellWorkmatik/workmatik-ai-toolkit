@@ -6,6 +6,6 @@ Tabs: Path (seven steps with links and a progress tick-list), Strategy (purpose,
 
 Shared files: css/workmatik-shared.css and js/workmatik-shared.js hold the organisation block, file naming and metadata used by every app. This repo is the single source; run scripts/sync-shared.sh to copy them into the other app repos. See docs/shared-contract.md.
 
-Static site, browser-only. Files are read locally and never uploaded. Progress ticks are stored only in the visitor's browser (localStorage). Tool links point to https://scottstockwellworkmatik.github.io/ (edit BASE in js/path.js if the account changes).
+Static site, browser-only. Files are read locally and never uploaded. Nothing is stored in the browser: the organisation block, progress ticks and strategy are cleared when the page closes, and the page asks before leaving. Tool links point to https://scottstockwellworkmatik.github.io/ (edit BASE in js/path.js if the account changes).
 
 Replaces the separate ai-strategy-view repo. The Journey Map tab embeds a copy of that page from the journey/ folder (iframe, ?embed=1). The Framework tab is inline in index.html with styles scoped in css/framework.css.
