@@ -95,24 +95,31 @@
   function openWorkflow() { askSave = false; window.open(WF_URL, '_blank'); renderNext(); }
   function renderNext() {
     var host = $('strategyNext'); if (!host) return; host.textContent = '';
-    if (!ranked().length) { host.hidden = true; askSave = false; return; }
+    var none = !ranked().length, unsaved = none || dirty;
     host.hidden = false;
     host.appendChild(el('h3', null, 'Strategy done? Next, choose the work that delivers it'));
-    host.appendChild(el('p', 'hint', dirty
-      ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
-      : 'Your strategy file is saved. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
-    if (askSave && dirty) {
+    host.appendChild(el('p', 'hint', none
+      ? 'Give a priority number to the measures you want to track, then download your strategy file. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
+      : dirty
+        ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
+        : 'Your strategy file is saved. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+    if (askSave && unsaved) {
       var warn = el('div', 'flagbox');
-      warn.appendChild(el('strong', null, 'Your strategy file is not saved yet. '));
-      warn.appendChild(document.createTextNode('Nothing is kept in the browser, so changes since your last download are lost if you close this tab. Download the file now, then continue.'));
+      if (none) {
+        warn.appendChild(el('strong', null, 'You have not given any measure a priority yet. '));
+        warn.appendChild(document.createTextNode('Without a strategy file the Workflow Assessment cannot tag workflows to your priorities. Rank at least one measure above, download the file, then continue.'));
+      } else {
+        warn.appendChild(el('strong', null, 'Your strategy file is not saved yet. '));
+        warn.appendChild(document.createTextNode('Nothing is kept in the browser, so changes since your last download are lost if you close this tab. Download the file now, then continue.'));
+      }
       var wa = el('div', 'actions');
-      var dl = el('button', 'btn primary', 'Download strategy file'); dl.type = 'button'; dl.addEventListener('click', download);
+      var dl = el('button', 'btn primary', 'Download strategy file'); dl.type = 'button'; dl.addEventListener('click', download); if (none) dl.disabled = true;
       var skip = el('button', 'lnk', 'Continue without saving'); skip.type = 'button'; skip.addEventListener('click', openWorkflow);
       wa.appendChild(dl); wa.appendChild(skip); warn.appendChild(wa); host.appendChild(warn);
     }
     var act = el('div', 'actions');
     var go = el('button', 'btn primary', 'Start the AI Workflow Assessment'); go.type = 'button';
-    go.addEventListener('click', function () { if (dirty) { askSave = true; renderNext(); } else openWorkflow(); });
+    go.addEventListener('click', function () { if (unsaved) { askSave = true; renderNext(); } else openWorkflow(); });
     var back = el('button', 'btn', 'Back to the Path'); back.type = 'button';
     back.addEventListener('click', function () { if (window.__toolkitShowTab) window.__toolkitShowTab('path'); });
     act.appendChild(go); act.appendChild(back); host.appendChild(act);
