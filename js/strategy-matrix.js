@@ -91,20 +91,32 @@
   }
 
   var WF_URL = 'https://scottstockwellworkmatik.github.io/ai-workflow-assessment/';
+  var askSave = false;
+  function openWorkflow() { askSave = false; window.open(WF_URL, '_blank'); renderNext(); }
   function renderNext() {
     var host = $('strategyNext'); if (!host) return; host.textContent = '';
-    if (!ranked().length) { host.hidden = true; return; }
+    if (!ranked().length) { host.hidden = true; askSave = false; return; }
     host.hidden = false;
     host.appendChild(el('h3', null, 'Strategy done? Next, choose the work that delivers it'));
     host.appendChild(el('p', 'hint', dirty
       ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
-      : 'Your strategy file is downloaded. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+      : 'Your strategy file is saved. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+    if (askSave && dirty) {
+      var warn = el('div', 'flagbox');
+      warn.appendChild(el('strong', null, 'Your strategy file is not saved yet. '));
+      warn.appendChild(document.createTextNode('Nothing is kept in the browser, so changes since your last download are lost if you close this tab. Download the file now, then continue.'));
+      var wa = el('div', 'actions');
+      var dl = el('button', 'btn primary', 'Download strategy file'); dl.type = 'button'; dl.addEventListener('click', download);
+      var skip = el('button', 'lnk', 'Continue without saving'); skip.type = 'button'; skip.addEventListener('click', openWorkflow);
+      wa.appendChild(dl); wa.appendChild(skip); warn.appendChild(wa); host.appendChild(warn);
+    }
     var act = el('div', 'actions');
-    var go = el('a', 'btn primary', 'Start the AI Workflow Assessment'); go.href = WF_URL; go.target = '_blank'; go.rel = 'noopener';
+    var go = el('button', 'btn primary', 'Start the AI Workflow Assessment'); go.type = 'button';
+    go.addEventListener('click', function () { if (dirty) { askSave = true; renderNext(); } else openWorkflow(); });
     var back = el('button', 'btn', 'Back to the Path'); back.type = 'button';
     back.addEventListener('click', function () { if (window.__toolkitShowTab) window.__toolkitShowTab('path'); });
     act.appendChild(go); act.appendChild(back); host.appendChild(act);
-    host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your strategy. Nothing is stored in the browser, so keep this tab open until you have downloaded the file.'));
+    host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your strategy. Keep this tab open until you have downloaded the file.'));
   }
 
   function render() {
@@ -172,7 +184,7 @@
   function download() {
     if (!Workmatik.requireOrg()) return;
     var sh = sheets(), fname = Workmatik.fileName('strategy');
-    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; }
+    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; renderNext(); }
     if (typeof ExcelJS === 'undefined') { fallback(); return; }
     var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Strategy';
     sh.forEach(function (s) {
