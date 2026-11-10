@@ -49,13 +49,15 @@
   function addCol() { S.cols.push({ id: 'SCC' + pad(S.next.col++, 2), label: 'New column', source: 'own' }); save(); render(); }
   function removeRow(r) {
     var n = S.measures.filter(function (m) { return m.row === r.id; }).length;
-    if (n && !window.confirm('Remove "' + r.label + '" and its ' + n + ' measure' + (n === 1 ? '' : 's') + '? Their IDs will not be reused.')) return;
-    S.measures = S.measures.filter(function (m) { return m.row !== r.id; }); S.rows.splice(S.rows.indexOf(r), 1); renumber(); save(); render();
+    function go() { S.measures = S.measures.filter(function (m) { return m.row !== r.id; }); S.rows.splice(S.rows.indexOf(r), 1); renumber(); save(); render(); }
+    if (!n) { go(); return; }
+    Workmatik.confirm('Remove "' + r.label + '" and its ' + n + ' measure' + (n === 1 ? '' : 's') + '? Their IDs will not be reused.', { title: 'Remove this row?', ok: 'Remove row', danger: true }).then(function (ok) { if (ok) go(); });
   }
   function removeCol(c) {
     var n = S.measures.filter(function (m) { return m.col === c.id; }).length;
-    if (n && !window.confirm('Remove "' + c.label + '" and its ' + n + ' measure' + (n === 1 ? '' : 's') + '? Their IDs will not be reused.')) return;
-    S.measures = S.measures.filter(function (m) { return m.col !== c.id; }); S.cols.splice(S.cols.indexOf(c), 1); renumber(); save(); render();
+    function go() { S.measures = S.measures.filter(function (m) { return m.col !== c.id; }); S.cols.splice(S.cols.indexOf(c), 1); renumber(); save(); render(); }
+    if (!n) { go(); return; }
+    Workmatik.confirm('Remove "' + c.label + '" and its ' + n + ' measure' + (n === 1 ? '' : 's') + '? Their IDs will not be reused.', { title: 'Remove this column?', ok: 'Remove column', danger: true }).then(function (ok) { if (ok) go(); });
   }
 
   // ---------- render
@@ -230,13 +232,15 @@
   }
   // Reads a strategy workbook already in memory. Used by the Strategy tab button and by the Files tab.
   function importBuffer(buf, name, msgs) {
-    var p; try { p = parseFile(buf); } catch (e) { msgs.appendChild(el('li', 'bad', name + ' could not be read as a Workmatik strategy file, so it was not loaded.')); return false; }
+    var p; try { p = parseFile(buf); } catch (e) { msgs.appendChild(el('li', 'bad', name + ' could not be read as a Workmatik strategy file, so it was not loaded.')); return Promise.resolve(false); }
     var chk = Workmatik.check(p.kv);
-    if (!chk.ok && !window.confirm(chk.message + ' Load it anyway? The page will switch to the file\'s organisation.')) { msgs.appendChild(el('li', 'bad', 'Not loaded: ' + name + ' is for a different organisation or business unit.')); return false; }
-    Workmatik.set({ org: p.kv['Organisation'] || Workmatik.get().org, unit: p.kv['Business unit'] || '', by: p.kv['Prepared by'] || Workmatik.get().by });
-    S = p.state; renumber(); dirty = false; $('strategyPurpose').value = S.purpose; render();
-    msgs.appendChild(el('li', 'ok', name + ' loaded into the Strategy tab: ' + S.measures.length + ' measure' + (S.measures.length === 1 ? '' : 's') + ', ' + ranked().length + ' tracked.'));
-    return true;
+    return Workmatik.confirmLoad(chk, 'The page will switch to the file\'s organisation.').then(function (go) {
+      if (!go) { msgs.appendChild(el('li', 'bad', 'Not loaded: ' + name + ' is for a different organisation or business unit.')); return false; }
+      Workmatik.set({ org: p.kv['Organisation'] || Workmatik.get().org, unit: p.kv['Business unit'] || '', by: p.kv['Prepared by'] || Workmatik.get().by });
+      S = p.state; renumber(); dirty = false; $('strategyPurpose').value = S.purpose; render();
+      msgs.appendChild(el('li', 'ok', name + ' loaded into the Strategy tab: ' + S.measures.length + ' measure' + (S.measures.length === 1 ? '' : 's') + ', ' + ranked().length + ' tracked.'));
+      return true;
+    });
   }
   function loadFile(file) {
     var msgs = $('strategyMessages'); msgs.textContent = '';
@@ -255,8 +259,10 @@
     $('btnStrategyLoad').addEventListener('click', function () { $('strategyFile').click(); });
     $('strategyFile').addEventListener('change', function (e) { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ''; });
     $('btnStrategyClear').addEventListener('click', function () {
-      if (!window.confirm('Clear the purpose, matrix and priorities? Download first if you want to keep them.')) return;
-      S = fresh(); dirty = false; pu.value = ''; $('strategyMessages').textContent = ''; render();
+      Workmatik.confirm('Clear the purpose, matrix and priorities? Download first if you want to keep them.', { title: 'Clear your strategy?', ok: 'Clear strategy', danger: true }).then(function (ok) {
+        if (!ok) return;
+        S = fresh(); dirty = false; pu.value = ''; $('strategyMessages').textContent = ''; render();
+      });
     });
     render();
   }
