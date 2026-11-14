@@ -160,21 +160,20 @@
     }
     return rec;
   }
-  // Team shape. Five levels, as in McKinsey's "From anxiety to advantage" (June 2026), listed bottom to top. Senior operators = senior individual contributors and managers with one direct report.
+  // Team shape. Four levels, listed bottom to top. McKinsey's "From anxiety to advantage" (June 2026) uses five (operators, senior operators, managers, directors and senior managers, leaders); Workmatik merges the top two and renames the bottom two.
   var LEVELS = [
-    { id: 'op', name: 'Operators' }, { id: 'sop', name: 'Senior operators' }, { id: 'mgr', name: 'Managers' },
-    { id: 'dir', name: 'Directors / senior managers' }, { id: 'ldr', name: 'Leaders' }
+    { id: 'jr', name: 'Junior practitioners' }, { id: 'sr', name: 'Senior practitioners' }, { id: 'mgr', name: 'Managers' }, { id: 'dir', name: 'Directors' }
   ];
-  // vals: five numbers, bottom to top. Returns Pyramid, Diamond, Hourglass, Other, or '' when there is nothing to classify.
+  // vals: four numbers, bottom to top. Returns Pyramid, Diamond, Hourglass, Other, or '' when there is nothing to classify.
   function classifyShape(vals) {
     var v = (vals || []).map(function (x) { return Number(x) || 0; });
-    if (v.length !== 5 || v.reduce(function (a, b) { return a + b; }, 0) <= 0) return '';
-    var nonInc = true; for (var i = 1; i < 5; i++) if (v[i] > v[i - 1]) nonInc = false;
+    if (v.length !== 4 || v.reduce(function (a, b) { return a + b; }, 0) <= 0) return '';
+    var nonInc = true; for (var i = 1; i < 4; i++) if (v[i] > v[i - 1]) nonInc = false;
     if (nonInc && v[0] > v[2]) return 'Pyramid';
     var peak = Math.max(v[1], v[2]);
-    if (peak > v[0] && peak > v[3] && peak > v[4]) return 'Diamond';
-    var midMin = Math.min(v[1], v[2], v[3]);
-    if (midMin < v[0] && midMin < Math.max(v[3], v[4])) return 'Hourglass';
+    if (peak > v[0] && peak > v[3]) return 'Diamond';
+    var midMin = Math.min(v[1], v[2]);
+    if (midMin < v[0] && midMin < v[3]) return 'Hourglass';
     return 'Other';
   }
   function byId(id) { return LIST.filter(function (a) { return a.id === id; })[0]; }

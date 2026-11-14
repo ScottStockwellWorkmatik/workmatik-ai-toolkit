@@ -345,7 +345,7 @@
     var AR = window.WorkmatikArchetypes;
     if (AR) {
       host.appendChild(el('h3', 'oq-group', 'Team shape by level'));
-      host.appendChild(el('p', 'hint', 'Full-time equivalents (FTE) at each level, today and in the model you are testing. The Roadmap draws the shape so you can see whether it is a pyramid, a diamond or something else. Enter whole or part numbers. Senior operators are senior individual contributors and managers with one direct report. The target is the number of people, not agents: the difference is the work agents take on.'));
+      host.appendChild(el('p', 'hint', 'Full-time equivalents (FTE) at each level, today and in the model you are testing. The Roadmap draws the shape so you can see whether it is a pyramid, a diamond or something else. Enter whole or part numbers. The target is the number of people, not agents: the difference is the work agents take on.'));
       var tb = el('table', 'rank-table'), hd = el('tr'); ['Level', 'FTE today', 'People in the target'].forEach(function (h) { hd.appendChild(el('th', null, h)); }); var th = el('thead'); th.appendChild(hd); tb.appendChild(th);
       var bd = el('tbody');
       AR.levels.slice().reverse().forEach(function (L) {
