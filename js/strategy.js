@@ -36,7 +36,9 @@
     var rows = rowsOf(ws).filter(function (r) { return String(r['Activity ID']).trim(); }).map(function (r) {
       return { id: String(r['Activity ID']).trim(), rid: String(r['Role ID']).trim(), group: String(r['Group']), role: String(r['Role']), task: String(r['Task']), activity: String(r['Activity']), cls: String(r['AI Suitability Classification']), custom: /^AC/.test(String(r['Activity ID'])) };
     });
-    return { kind: 'roles', kv: d, org: String(d['Organisation'] || ''), date: serialToIso(d['Exported']), rows: rows };
+    var meta = {}; if (wb.Sheets['Role details']) rowsOf(wb.Sheets['Role details']).forEach(function (r) { var nm = String(r['Role']).trim(); if (!nm) return; var m = {}, f = parseFloat(r['FTE today']); if (String(r['Usual level']).trim()) m.level = String(r['Usual level']).trim(); if (String(r['Usual work mode']).trim()) m.mode = String(r['Usual work mode']).trim(); if (!isNaN(f) && f >= 0) m.fte = f; if (Object.keys(m).length) meta[nm] = m; });
+    var totals = {}; if (wb.Sheets['All activities']) rowsOf(wb.Sheets['All activities']).forEach(function (r) { var nm = String(r['Role']).trim(); if (nm) totals[nm] = (totals[nm] || 0) + 1; });
+    return { kind: 'roles', kv: d, org: String(d['Organisation'] || ''), date: serialToIso(d['Exported']), rows: rows, meta: meta, totals: totals };
   }
   function wfCaps(sc, tier) {
     var out = [];
@@ -299,11 +301,32 @@
     host.appendChild(sec);
   }
 
+  // Shape from the roles file, when every role in it has a level and an FTE. Returns null otherwise.
+  function shapeFromRoles(AR) {
+    if (!F.roles || !F.roles.meta) return null;
+    var names = {}; F.roles.rows.forEach(function (r) { names[r.role] = names[r.role] || { n: 0, fa: 0, au: 0 }; var x = names[r.role]; x.n++; if (r.cls === 'Full automation') x.fa++; else if (r.cls === 'Augmentation') x.au++; });
+    var list = Object.keys(names); if (!list.length) return null;
+    var ids = {}; AR.levels.forEach(function (l) { ids[l.name] = l.id; });
+    var today = {}, target = {};
+    for (var i = 0; i < list.length; i++) {
+      var m = F.roles.meta[list[i]]; if (!m || m.fte == null || !ids[m.level]) return null;
+      var x = names[list[i]], tot = Math.max(x.n, (F.roles.totals || {})[list[i]] || 0), keep = Math.max(0, 1 - (x.fa + AR.augShare * x.au) / tot), id = ids[m.level];
+      today[id] = (today[id] || 0) + m.fte; target[id] = (target[id] || 0) + m.fte * keep;
+    }
+    Object.keys(target).forEach(function (k) { target[k] = Math.round(target[k] * 10) / 10; });
+    return { today: today, target: target };
+  }
+
   function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
   // Shape of the team by level: today, and the target with people (solid) and the work agents take on (outline). Drawn from the client's own numbers.
   function renderShape(host) {
     var AR = window.WorkmatikArchetypes, OG = window.WorkmatikOrganisation; if (!AR || !OG) return;
-    var sh = OG.shape(), L = AR.levels, has = function (o) { return Object.keys(o).length > 0; };
+    var sh = OG.shape(), L = AR.levels, has = function (o) { return Object.keys(o).length > 0; }, note = '';
+    var fr = shapeFromRoles(AR);
+    if (fr) {
+      // The Organisation tab numbers win when entered; otherwise use the roles, and estimate the target from the human only, augmented and automated split.
+      if (!has(sh.today)) { sh = { today: fr.today, target: has(sh.target) ? sh.target : fr.target }; note = 'Today\u2019s numbers come from the level and FTE on each role in the AI Roles Assessment.' + (has(OG.shape().target) ? '' : ' The target is an estimate: today\u2019s FTE less the work that moves to agents (automated activities in full, augmented activities at ' + Math.round(AR.augShare * 100) + '%, as a share of all the role\u2019s activities, so activities you did not select are assumed to stay with people).'); }
+    }
     var sec = section('Shape of the team', 'People at each level (full-time equivalents), from the Organisation tab. The outline is the work agents take on: today\u2019s number less the people in the target. Reference shapes: McKinsey & Company, \u201cFrom anxiety to advantage: A marketing organization that thrives with AI\u201d (June 2026), describes a pyramid today and a possible diamond. PwC, \u201cNo more pyramids\u201d (January 2026), argues the diamond should be a deliberate choice and suggests an hourglass for knowledge-intensive firms.');
     if (!has(sh.today)) { sec.appendChild(el('p', null, 'Enter the FTE at each level on the Organisation tab (Team shape by level) to see the shape.')); host.appendChild(sec); return; }
     var today = L.map(function (x) { return sh.today[x.id] || 0; }), target = L.map(function (x) { return sh.target[x.id] || 0; }), hasT = has(sh.target);
@@ -325,6 +348,7 @@
     grid.appendChild(panel('Today', AR.classifyShape(today), today, false));
     if (hasT) grid.appendChild(panel('Target', AR.classifyShape(target), target, true));
     sec.appendChild(grid);
+    if (note) sec.appendChild(el('p', 'hint', note));
     if (!hasT) sec.appendChild(el('p', 'hint', 'Enter the people at each level in the target to see the target shape and the work agents take on.'));
     else {
       var tT = today.reduce(function (a, b) { return a + b; }, 0), tG = target.reduce(function (a, b) { return a + b; }, 0);
@@ -348,7 +372,9 @@
     var linked = C.strat && C.strat.hasWf && rows.some(function (r) { return r.rank; });
     var sec = section('Roles needed to deliver the strategy', linked ? 'The roles in the workflows that support your priorities, in priority order. For each role, the share of its activities that are human only, augmented by AI or fully automated, from the AI Roles Assessment.' : 'Load the AI Workflow Assessment with your strategy file to see which roles each priority needs. Until then this lists every role in the AI Roles Assessment.');
     if (!F.roles) sec.appendChild(el('p', 'hint', 'Load the AI Roles Assessment file to see the human only, augmented and automated split for each role.'));
-    sec.appendChild(table(['Priority', 'Role', 'Activities', 'Human only', 'Augmented', 'Automated'], rows.map(function (r) { return [r.rank || '', r.role, r.n || '', pct(r.ho), pct(r.au), pct(r.fa)]; }), [0, 2, 3, 4, 5], [10, 34, 12, 14, 15, 15]));
+    var meta = F.roles ? F.roles.meta : {}, hasMeta = Object.keys(meta || {}).length > 0;
+    if (hasMeta) sec.appendChild(table(['Priority', 'Role', 'Level', 'FTE', 'Work mode', 'Activities', 'Human only', 'Augmented', 'Automated'], rows.map(function (r) { var m = meta[r.role] || {}; return [r.rank || '', r.role, m.level || '', m.fte != null ? m.fte : '', m.mode || '', r.n || '', pct(r.ho), pct(r.au), pct(r.fa)]; }), [0, 3, 5, 6, 7, 8], [7, 25, 15, 6, 12, 9, 9, 9, 8]));
+    else sec.appendChild(table(['Priority', 'Role', 'Activities', 'Human only', 'Augmented', 'Automated'], rows.map(function (r) { return [r.rank || '', r.role, r.n || '', pct(r.ho), pct(r.au), pct(r.fa)]; }), [0, 2, 3, 4, 5], [10, 34, 12, 14, 15, 15]));
     host.appendChild(sec);
   }
 

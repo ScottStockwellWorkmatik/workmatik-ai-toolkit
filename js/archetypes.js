@@ -63,6 +63,8 @@
     E: { gov: 0.5, plat: 0.5, brief: 0.5, spoke: 0, all: 1.5 }
   };
   var NOT_READY = 3;
+  // Share of an augmented activity's work assumed to move to agents when estimating the target number of people. A starting guess to calibrate with real cases.
+  var AUG_SHARE = 0.25;
   function gapPenalty(id, levels, base) {
     var w = GAP_WEIGHTS[id] || {}, total = 0, gaps = [];
     GAP_AREAS.forEach(function (g) {
@@ -186,5 +188,5 @@
     return 'Other';
   }
   function byId(id) { return LIST.filter(function (a) { return a.id === id; })[0]; }
-  window.WorkmatikArchetypes = { list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, classifyShape: classifyShape, context: CONTEXT };
+  window.WorkmatikArchetypes = { list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, augShare: AUG_SHARE, classifyShape: classifyShape, context: CONTEXT };
 })();
