@@ -128,6 +128,7 @@
             if (F.skills.some(function (s) { return s.file === p.file && s.name === p.name && s.rater === p.rater && s.date === p.date; })) { msgs.appendChild(el('li', 'bad', f.name + ' is already loaded.')); return; }
             F.skills.push(p);
           } else {
+            if (p.kind === 'map') { msgs.appendChild(el('li', 'ok', f.name + ': Marketing Skills Map file recognised. It is reference only and is not used in the roadmap.')); return; }
             var had = F[p.kind]; F[p.kind] = p;
             if (had) msgs.appendChild(el('li', 'ok', f.name + ' replaced ' + had.file + '.'));
           }
@@ -139,7 +140,7 @@
   }
   function loadedItems() {
     var out = [];
-    ['roles', 'workflow', 'capability', 'map'].forEach(function (k) { if (F[k]) out.push(F[k]); });
+    ['roles', 'workflow', 'capability'].forEach(function (k) { if (F[k]) out.push(F[k]); });
     F.skills.forEach(function (s) { out.push(s); });
     return out;
   }
@@ -159,13 +160,13 @@
     items.forEach(function (p) { var tr = el('tr'); [LABEL[p.kind], p.file, p.org, p.date, detailOf(p)].forEach(function (c) { tr.appendChild(el('td', null, c)); }); tb.appendChild(tr); });
     t.appendChild(tb);
     var missing = ['roles', 'workflow', 'capability'].filter(function (k) { return !F[k]; }).map(function (k) { return LABEL[k]; });
-    if (!F.skills.length) missing.push(LABEL.skills); if (!F.map) missing.push(LABEL.map);
+    if (!F.skills.length) missing.push(LABEL.skills);
     var note = $('missingNote'); if (!note) { note = el('p', 'hint'); note.id = 'missingNote'; $('fileTable').parentNode.parentNode.insertBefore(note, $('fileTable').parentNode.nextSibling); }
     note.textContent = missing.length && items.length ? 'Not loaded: ' + missing.join('; ') + '. Those sections will not appear.' : '';
   }
 
   // ---------- compute
-  function rules() { return { cap: numv('rCap', 2), first: numv('rFirst', 3), skill: numv('rSkill', 1.5), rank: numv('rRank', 5), cov: numv('rCov', 4) }; }
+  function rules() { return { cap: numv('rCap', 2), first: numv('rFirst', 3), skill: numv('rSkill', 1.5) }; }
   function compute() {
     var R = rules(), out = { R: R, warnings: [] };
     var cap = F.capability, wf = F.workflow;
@@ -215,8 +216,6 @@
         return { d: d, avg: avg, n: vals.length, gap: avg <= R.skill, by: by };
       });
     }
-    out.mapGaps = null;
-    if (F.map) out.mapGaps = F.map.rows.slice().sort(function (a, b) { return a.rank - b.rank; }).map(function (r) { return { r: r, gap: r.rank <= R.rank && r.cov <= R.cov }; });
     out.strat = buildStrategy(out);
     if (out.strat) out.workflows.sort(function (a, b) { return (out.strat.wfRank[a.w.id] || 99) - (out.strat.wfRank[b.w.id] || 99); });
     // consistency
@@ -391,17 +390,17 @@
     if (rec && rec.best && AR) rec.best.gaps.forEach(function (g) { ((AR.gapSources[g.id] || {}).caps || []).forEach(function (id) { gapCaps[id] = g.name; }); });
     (rec ? rec.common : []).forEach(function (g) { ((AR.gapSources[g.id] || {}).caps || []).forEach(function (id) { gapCaps[id] = g.name; }); });
     var rows = list.map(function (x, i) {
-      var roles = x.w.roles || [], modes = {}, junior = [], gaps = {};
-      roles.forEach(function (r) { var m = meta[r]; if (m && m.mode) modes[m.mode] = 1; if (m && m.level === 'Junior practitioners') junior.push(r); });
+      var roles = x.w.roles || [], modes = {}, gaps = {};
+      roles.forEach(function (r) { var m = meta[r]; if (m && m.mode) modes[m.mode] = 1; });
       x.blockers.forEach(function (b) { if (gapCaps[b.id]) gaps[gapCaps[b.id]] = 1; });
       var r = rank(x);
-      return [i + 1, x.w.name, r === 99 ? 'Not linked' : r, label[x.wave], roles.join('; '), Object.keys(modes).join(', '), junior.join('; '), Object.keys(gaps).join('; ')];
+      return [i + 1, x.w.name, r === 99 ? 'Not linked' : r, label[x.wave], roles.join('; '), Object.keys(modes).join(', '), Object.keys(gaps).join('; ')];
     });
     var hasMeta = Object.keys(meta).length > 0, heads = ['Order', 'Workflow', 'Priority', 'When', 'Roles'], widths = [6, 22, 9, 15, 22];
-    if (hasMeta) { heads.push('Work modes needed', 'Junior roles touched'); widths.push(12, 14); }
+    if (hasMeta) { heads.push('Work modes needed'); widths.push(14); }
     heads.push('Model gap it touches'); widths.push(100 - widths.reduce(function (a, b) { return a + b; }, 0));
-    var sec = section('What moves first', 'Workflows in order of the strategy priority they serve (the highest rank wins where a workflow serves several), then readiness, then priority score. Work modes describe the type of person the roles usually need. Junior roles are flagged because the work AI takes first is often the work juniors learn on: plan how those people will build experience. The last column shows where the workflow depends on a capability the recommended model also needs.');
-    sec.appendChild(table(heads, rows.map(function (r) { var out = r.slice(0, 5); if (hasMeta) out.push(r[5], r[6]); out.push(r[7]); return out; }), [0], widths));
+    var sec = section('What moves first', 'Workflows in order of the strategy priority they serve (the highest rank wins where a workflow serves several), then readiness, then priority score. Work modes describe the type of person the roles usually need. The last column shows where the workflow depends on a capability the recommended model also needs.');
+    sec.appendChild(table(heads, rows.map(function (r) { var out = r.slice(0, 5); if (hasMeta) out.push(r[5]); out.push(r[6]); return out; }), [0], widths));
     host.appendChild(sec);
   }
 
@@ -476,15 +475,11 @@
       host.appendChild(s3);
     }
 
-    if (C.domains || C.mapGaps) {
+    if (C.domains) {
       var s4 = section('Skills to build', 'Skill domains link to the foundation capabilities by category. The link is the author’s judgement.');
       if (C.domains) {
         s4.appendChild(el('h3', null, 'AI Skills Assessment (' + plural(F.skills.length, 'response', 'responses') + ')'));
         s4.appendChild(table(['Domain', 'ID', 'Average (0 to 4)', 'Gap', 'Needed for foundations'], C.domains.map(function (d) { return [d.d.name, d.d.id, round1(d.avg).toFixed(1), d.gap ? 'Yes' : '', d.by.join(', ')]; }), [2], [34, 9, 15, 9, 33]));
-      }
-      if (C.mapGaps) {
-        s4.appendChild(el('h3', null, 'Marketing Skills Map'));
-        s4.appendChild(table(['Rank', 'Skill', 'ID', 'Coverage (0 to 10)', 'Gap'], C.mapGaps.map(function (x) { return [x.r.rank, x.r.tag, x.r.id, x.r.cov, x.gap ? 'Important, low coverage' : '']; }), [0, 3], [9, 31, 9, 17, 34]));
       }
       host.appendChild(s4);
     }
@@ -517,10 +512,9 @@
       var fd = [['Capability ID', 'Capability', 'Phase', 'Your score', 'Workflows held up']]; C.foundations.forEach(function (f) { fd.push([f.cap.id, f.cap.name, REF.phases[f.cap.phase], F.capability ? F.capability.scores[f.cap.id] : '', f.wfs.map(function (w) { return w.id + ' ' + w.name; }).join('; ')]); });
       out.push(['Foundations', fd, [13, 46, 12, 11, 80]]);
     }
-    if (C.domains || C.mapGaps) {
+    if (C.domains) {
       var sk = [['Source', 'ID', 'Skill or domain', 'Measure', 'Value', 'Gap', 'Needed for']];
       if (C.domains) C.domains.forEach(function (d) { sk.push(['AI Skills Assessment', d.d.id, d.d.name, 'Average (0 to 4)', round1(d.avg), d.gap ? 'Yes' : '', d.by.join('; ')]); });
-      if (C.mapGaps) C.mapGaps.forEach(function (x) { sk.push(['Marketing Skills Map', x.r.id, x.r.tag, 'Rank ' + x.r.rank + ', coverage (0 to 10)', x.r.cov, x.gap ? 'Yes' : '', '']); });
       out.push(['Skills', sk, [22, 9, 44, 26, 9, 8, 24]]);
     }
     if (F.roles) {
@@ -557,7 +551,7 @@
     [['Where AI applies', 'AI Roles Assessment', 'Role IDs and activity IDs'], ['Suggested sequence', 'AI Workflow Assessment (and the AI Capability Assessment to test readiness)', 'Workflow IDs, capability IDs'], ['Foundations to fix first', 'AI Capability Assessment and AI Workflow Assessment', 'Capability IDs'], ['Skills to build', 'AI Skills Assessment and/or Marketing Skills Map', 'Skill domain IDs (SD01 to SD06), skill IDs (MS01 to MS10)']].forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', null, c)); }); b2.appendChild(tr); });
     f.appendChild(b2);
   }
-  var TABS = ['path', 'strategy', 'organisation', 'files', 'roadmap', 'journey', 'skillsmap', 'framework', 'rules', 'guide'];
+  var TABS = ['path', 'strategy', 'organisation', 'files', 'roadmap', 'framework', 'rules', 'guide', 'journey', 'skillsmap'];
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
     if (name === 'roadmap') renderRoadmap();
@@ -575,7 +569,7 @@
   function init() {
     $('fwVersion').textContent = REF.version;
     Workmatik.renderOrgBlock($('orgBlock'));
-    var d = { rCap: 2, rFirst: 3, rSkill: 1.5, rRank: 5, rCov: 4 }; Object.keys(d).forEach(function (k) { $(k).value = d[k]; $(k).addEventListener('input', function () { if (!$('panel-roadmap').hidden) renderRoadmap(); }); });
+    var d = { rCap: 2, rFirst: 3, rSkill: 1.5 }; Object.keys(d).forEach(function (k) { $(k).value = d[k]; $(k).addEventListener('input', function () { if (!$('panel-roadmap').hidden) renderRoadmap(); }); });
     renderRules(); renderFiles();
     TABS.forEach(function (t, i) {
       $('tab-' + t).addEventListener('click', function () { showTab(t); });

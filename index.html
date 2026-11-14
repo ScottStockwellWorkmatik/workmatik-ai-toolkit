@@ -48,11 +48,11 @@
     <button class="tab" role="tab" id="tab-organisation" aria-controls="panel-organisation" aria-selected="false" tabindex="-1">Organisation</button>
     <button class="tab" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files</button>
     <button class="tab" role="tab" id="tab-roadmap" aria-controls="panel-roadmap" aria-selected="false" tabindex="-1">Roadmap</button>
-    <button class="tab ref first" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Reference: Journey Map</button>
-    <button class="tab ref" role="tab" id="tab-skillsmap" aria-controls="panel-skillsmap" aria-selected="false" tabindex="-1">Reference: Skills Map</button>
     <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
     <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
     <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
+    <button class="tab ref first" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Reference: Journey Map</button>
+    <button class="tab ref" role="tab" id="tab-skillsmap" aria-controls="panel-skillsmap" aria-selected="false" tabindex="-1">Reference: Skills Map</button>
   </div>
 
   <section id="panel-path" role="tabpanel" aria-labelledby="tab-path">
@@ -293,8 +293,6 @@
         <label><span class="lbl">Capability is weak at or below</span><input id="rCap" type="number" min="1" max="5" step="0.5"></label>
         <label><span class="lbl">Workflows to start first</span><input id="rFirst" type="number" min="1" max="10" step="1"></label>
         <label><span class="lbl">Skill domain is a gap at or below (0 to 4)</span><input id="rSkill" type="number" min="0" max="4" step="0.5"></label>
-        <label><span class="lbl">Skills Map: important means rank at or above</span><input id="rRank" type="number" min="1" max="10" step="1"></label>
-        <label><span class="lbl">Skills Map: low coverage at or below (0 to 10)</span><input id="rCov" type="number" min="0" max="10" step="1"></label>
       </div>
     </div>
     <div class="card">
@@ -304,7 +302,7 @@
         <li><strong>Quick wins.</strong> Workflows in the Quick win group whose capabilities are not weak.</li>
         <li><strong>Fix first, then build.</strong> Start here and Prepare first workflows held up by a weak capability. The weak capabilities are listed as foundations, earliest journey-map phase first, then by how many workflows they hold up.</li>
         <li><strong>Hold.</strong> Park workflows, and any workflow in a prohibited tier, which should not go ahead.</li>
-        <li><strong>Skills.</strong> Each foundation capability points to skill domains (table below). A domain is a gap if the average is at or below the threshold. A Marketing Skills Map skill is a gap if it is important but has low coverage.</li>
+        <li><strong>Skills.</strong> Each foundation capability points to skill domains (table below). A domain is a gap if the average is at or below the threshold.</li>
       </ol>
       <p class="hint">A capability that has not been scored is shown as &ldquo;not yet scored&rdquo; and is not treated as weak. If no capability file is loaded, no workflow is held back and the page says so.</p>
     </div>
@@ -329,7 +327,7 @@
 <script src="js/archetypes.js?v=10"></script>
 <script src="js/strategy-matrix.js?v=9"></script>
 <script src="js/organisation.js?v=4"></script>
-<script src="js/strategy.js?v=21"></script>
+<script src="js/strategy.js?v=22"></script>
 <script src="js/path.js?v=7"></script>
 </body>
 </html>
