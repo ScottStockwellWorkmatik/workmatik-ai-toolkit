@@ -277,7 +277,7 @@
     if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Give at least one measure a priority on the Strategy tab.')); host.appendChild(sec); return; }
     var b = rec.best;
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
-    if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so test both.'));
+    if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so the case for each is close. Both are worth testing, and the choice is yours.'));
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
     sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Gaps to close'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
     sec.appendChild(el('h3', null, 'Why ' + b.name));

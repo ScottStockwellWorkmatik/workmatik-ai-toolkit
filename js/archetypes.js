@@ -12,12 +12,15 @@
   // Starter row x starter column -> [first choice, second choice]. Rows: SR01 Build brand and trust, SR02 Win new customers, SR03 Grow existing customers.
   // Columns: SC01 Speed, SC02 Quality, SC03 Cost.
   var CELLS = {
-    'SR01|SC01': ['B', 'A'], 'SR01|SC02': ['A', 'B'], 'SR01|SC03': ['A', 'D'],
-    'SR02|SC01': ['C', 'E'], 'SR02|SC02': ['B', 'C'], 'SR02|SC03': ['D', 'E'],
-    'SR03|SC01': ['C', 'E'], 'SR03|SC02': ['B', 'C'], 'SR03|SC03': ['C', 'D']
+    'SR01|SC01': ['B', 'A'], 'SR01|SC02': ['D', 'A'], 'SR01|SC03': ['A', 'D'],
+    'SR02|SC01': ['E', 'C'], 'SR02|SC02': ['B', 'C'], 'SR02|SC03': ['D', 'E'],
+    'SR03|SC01': ['D', 'C'], 'SR03|SC02': ['B', 'C'], 'SR03|SC03': ['C', 'D']
   };
   var NOTES = {
     'SR01|SC01': 'Speed on brand and trust leans towards control, so hub and spoke first, then the governed hub.',
+    'SR02|SC01': 'Speed on winning new customers suits the orchestrator-led lean team, then pods.',
+    'SR01|SC02': 'Quality on brand and trust suits the fixed base with assembled crews, then the governed hub.',
+    'SR03|SC01': 'Speed on growing existing customers suits the fixed base with assembled crews, then pods.',
     'SR03|SC03': 'Cost on growing existing customers leans towards pods first, then the fixed base.'
   };
   // Points: first choice 2, second choice 1, each multiplied by the measure's rank weight. Rank 1 counts in full; no limit on how many ranks count.
