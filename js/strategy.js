@@ -274,7 +274,7 @@
     if (C.domains) { dom = {}; C.domains.forEach(function (d) { dom[d.d.id] = d.avg; }); }
     var g = AR.gapLevels(capScores, oos, dom), ans = window.WorkmatikOrganisation ? window.WorkmatikOrganisation.answers() : {}, rec = AR.recommend(SM.state(), g.levels, ans);
     var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank). Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
-    if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Rank at least one strategy priority.')); host.appendChild(sec); return; }
+    if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Give at least one measure a priority on the Strategy tab.')); host.appendChild(sec); return; }
     var b = rec.best;
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so test both.'));

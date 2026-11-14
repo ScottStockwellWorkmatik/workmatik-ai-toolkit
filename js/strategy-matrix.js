@@ -105,6 +105,10 @@
       : dirty
         ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
         : 'Your strategy file is saved. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+    if (none && !askSave) {
+      var need = el('div', 'flagbox'); need.appendChild(el('strong', null, 'Choose at least one priority. '));
+      need.appendChild(document.createTextNode('Give a priority number to at least one measure in the grid. Your priorities decide which organisation model the Roadmap recommends, and the Workflow Assessment uses them to tag each workflow.')); host.appendChild(need);
+    }
     if (askSave && unsaved) {
       var warn = el('div', 'flagbox');
       if (none) {
@@ -204,6 +208,7 @@
     ];
   }
   function download() {
+    if (!ranked().length) { Workmatik.notify('Give at least one measure a priority number before you download. The priorities drive the recommended organisation model and the workflow tagging.', { title: 'Choose a priority' }); return; }
     if (!Workmatik.requireOrg()) return;
     var sh = sheets(), fname = Workmatik.fileName('strategy');
     function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; renderNext(); }
