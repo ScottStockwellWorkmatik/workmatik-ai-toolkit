@@ -272,13 +272,24 @@
     var AR = window.WorkmatikArchetypes, SM = window.WorkmatikStrategy; if (!AR || !SM || !SM.ranked().length) return;
     var capScores = F.capability ? F.capability.scores : null, oos = F.capability ? F.capability.oos : null, dom = null;
     if (C.domains) { dom = {}; C.domains.forEach(function (d) { dom[d.d.id] = d.avg; }); }
-    var g = AR.gapLevels(capScores, oos, dom), rec = AR.recommend(SM.state(), g.levels);
+    var g = AR.gapLevels(capScores, oos, dom), ans = window.WorkmatikOrganisation ? window.WorkmatikOrganisation.answers() : {}, rec = AR.recommend(SM.state(), g.levels, ans);
     var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank). Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
     if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Rank at least one strategy priority.')); host.appendChild(sec); return; }
     var b = rec.best;
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so test both.'));
-    sec.appendChild(table(['Model', 'Strategy points', 'Gap penalty', 'Score', 'Gaps to close'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.points), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3], [24, 12, 12, 10, 42]));
+    if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
+    sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Gaps to close'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
+    sec.appendChild(el('h3', null, 'Why ' + b.name));
+    var ul = el('ul'); b.why.forEach(function (w) { ul.appendChild(el('li', null, 'Strategy: ' + w.cell + ' (priority ' + w.rank + ') adds ' + round1(w.points) + '.')); });
+    b.contextWhy.forEach(function (w) { ul.appendChild(el('li', null, 'Organisation: ' + w.text + ' (' + w.answer + ') adds ' + round1(w.points) + '.')); });
+    b.gaps.forEach(function (w) { ul.appendChild(el('li', null, 'Gap to close: ' + w.name + ' lowers the score by ' + round1(w.points) + '.')); });
+    sec.appendChild(ul);
+    sec.appendChild(el('h3', null, 'What would change the answer'));
+    if (rec.flips.length) { var fl = el('ul'); rec.flips.slice(0, 5).forEach(function (f) { fl.appendChild(el('li', null, 'If ' + f.field.replace(/_/g, ' ') + ' were \u201c' + f.to + '\u201d (now ' + f.from + '), the best fit would be ' + f.model + '.')); }); sec.appendChild(fl); }
+    else sec.appendChild(el('p', null, 'No single Organisation answer would change the best fit.'));
+    var nOrg = ['compliance_burden', 'ai_maturity_stage', 'breadth', 'data_readiness', 'headcount_band', 'demand_variability'].filter(function (k) { return !ans[k]; });
+    if (nOrg.length) sec.appendChild(el('p', 'hint', 'Not yet answered on the Organisation tab: ' + nOrg.map(function (k) { return k.replace(/_/g, ' '); }).join(', ') + '. Answering these will sharpen the recommendation.'));
     var na = Object.keys(g.assessed).filter(function (k) { return !g.assessed[k]; });
     if (na.length) sec.appendChild(el('p', 'hint', 'Not assessed, so no gap counted: ' + na.map(function (k) { return AR.gapAreas.filter(function (a) { return a.id === k; })[0].name; }).join('; ') + '. Load the AI Capability Assessment and AI Skills Assessment files to test these.'));
     if (rec.ignored.length) sec.appendChild(el('p', 'hint', 'Ignored, no best-fit model chosen: ' + rec.ignored.join('; ') + '.'));

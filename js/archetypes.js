@@ -92,10 +92,35 @@
     });
     return { levels: levels, avg: avg, assessed: assessed };
   }
+  // Context signals from the Organisation answers. Simple points: 1 each, 0.5 for the two weak-evidence fields (deal_complexity, skill_shape).
+  // Each rule: field, the answers that count, the model that gains the points, and the reason shown. Working hypotheses from the research brief.
+  var CONTEXT = [
+    { f: 'compliance_burden', a: ['Heavy'], m: 'A', p: 1, why: 'Heavy regulatory or brand risk favours central control' },
+    { f: 'ai_maturity_stage', a: ['Not started', 'Trials'], m: 'A', p: 1, why: 'Early AI use favours a central team holding the skills' },
+    { f: 'breadth', a: ['Two to five', 'Six or more'], m: 'B', p: 1, why: 'Several segments or markets need local relevance with central consistency' },
+    { f: 'data_readiness', a: ['Medium', 'High'], m: 'B', p: 1, why: 'A central platform is something the team can fund and use' },
+    { f: 'skill_shape', a: ['T-shaped (specialist depth, broad range)', 'Mixed'], m: 'B', p: 0.5, why: 'Some AI skill at spoke level (weak evidence)' },
+    { f: 'deal_complexity', a: ['Complex, many buyers and long cycle'], m: 'B', p: 0.5, why: 'Complex sales need local judgement (weak evidence)' },
+    { f: 'data_readiness', a: ['High'], m: 'C', p: 1, why: 'Trusted data lets pods work on a shared platform' },
+    { f: 'headcount_band', a: ['51-200', 'Over 200'], m: 'C', p: 1, why: 'Enough scale to fund a platform team' },
+    { f: 'org_axis', a: ['By segment or market', 'By outcome or value stream'], m: 'C', p: 1, why: 'Already organised around segments or outcomes that can be measured' },
+    { f: 'demand_variability', a: ['Lumpy'], m: 'D', p: 1, why: 'Lumpy demand suits a fixed base with assembled crews' },
+    { f: 'skill_shape', a: ['Mostly specialists', 'T-shaped (specialist depth, broad range)'], m: 'D', p: 0.5, why: 'Stable role vocabulary to assemble crews from (weak evidence)' },
+    { f: 'headcount_band', a: ['Under 10'], m: 'E', p: 1, why: 'A small team can run lean around one orchestrator' },
+    { f: 'compliance_burden', a: ['Light'], m: 'E', p: 1, why: 'Light regulation leaves room for a lean model' },
+    { f: 'ai_maturity_stage', a: ['Used in most workflows'], m: 'E', p: 1, why: 'High AI maturity' },
+    { f: 'deal_complexity', a: ['Transactional'], m: 'E', p: 0.5, why: 'Simple sales suit a lean team (weak evidence)' }
+  ];
+  var CONTEXT_FIELDS = ['compliance_burden', 'ai_maturity_stage', 'breadth', 'data_readiness', 'skill_shape', 'deal_complexity', 'headcount_band', 'org_axis', 'demand_variability'];
+  function contextPoints(answers) {
+    var pts = {}, why = {}; LIST.forEach(function (a) { pts[a.id] = 0; why[a.id] = []; });
+    CONTEXT.forEach(function (r) { var v = answers && answers[r.f]; if (v && r.a.indexOf(v) >= 0) { pts[r.m] += r.p; why[r.m].push({ field: r.f, answer: v, points: r.p, text: r.why }); } });
+    return { pts: pts, why: why };
+  }
   // Recommendation: simple points from the strategy grid, less the gap penalty. Organisation context signals are added in the next step.
   var MARGIN = 2; // a runner-up is shown when its score is within this many points of the best
   // state = WorkmatikStrategy.state(); measures with rank >= 1 count, with no limit. Added rows or columns count only when the client chose a model for them.
-  function recommend(state, levels) {
+  function recommend(state, levels, answers, noFlip) {
     var pts = {}, why = {}, ignored = [];
     LIST.forEach(function (a) { pts[a.id] = 0; why[a.id] = []; });
     function rowOf(id) { return state.rows.filter(function (r) { return r.id === id; })[0] || {}; }
@@ -107,11 +132,30 @@
       var w = rankWeight(m.rank), label = (r.label || '') + ' · ' + (c.label || '');
       [POINTS.first, POINTS.second].forEach(function (p, i) { var id = pick[i]; if (!id) return; var v = p * w; pts[id] += v; why[id].push({ cell: label, rank: m.rank, points: v }); });
     });
-    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels); return { id: a.id, name: a.name, points: pts[a.id], penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: pts[a.id] - g.penalty, why: why[a.id] }; });
+    var cx = contextPoints(answers);
+    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels), st = pts[a.id], tot = st + cx.pts[a.id]; return { id: a.id, name: a.name, strategy: st, context: cx.pts[a.id], points: tot, penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: tot - g.penalty, why: why[a.id], contextWhy: cx.why[a.id] }; });
     rows.sort(function (x, y) { return y.score - x.score; });
     var best = rows[0], runner = rows[1] && best.score - rows[1].score <= MARGIN && rows[1].points > 0 ? rows[1] : null;
-    return { rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
+    var rec = { rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
+    // Exploration unit: strategy needs new customers or channels as well as efficiency, the team can fund a separate unit, and never for E.
+    var needsNew = state.measures.some(function (m) { return m.rank >= 1 && m.row === 'SR02'; });
+    var canFund = answers && (['51-200', 'Over 200'].indexOf(answers.headcount_band) >= 0 || (answers.exploration_unit && answers.exploration_unit !== 'No'));
+    rec.exploration = !!(rec.best && rec.best.id !== 'E' && needsNew && canFund);
+    // What would change the answer: change one Organisation answer at a time and see whether the best fit moves.
+    rec.flips = [];
+    if (!noFlip && rec.best && answers) {
+      CONTEXT_FIELDS.forEach(function (f) {
+        var opts = {}; CONTEXT.forEach(function (r) { if (r.f === f) r.a.forEach(function (o) { opts[o] = 1; }); });
+        Object.keys(opts).forEach(function (o) {
+          if (answers[f] === o) return;
+          var alt = {}; Object.keys(answers).forEach(function (k) { alt[k] = answers[k]; }); alt[f] = o;
+          var r2 = recommend(state, levels, alt, true);
+          if (r2.best && r2.best.id !== rec.best.id) rec.flips.push({ field: f, from: answers[f] || 'not answered', to: o, model: r2.best.name });
+        });
+      });
+    }
+    return rec;
   }
   function byId(id) { return LIST.filter(function (a) { return a.id === id; })[0]; }
-  window.WorkmatikArchetypes = { list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN };
+  window.WorkmatikArchetypes = { list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, context: CONTEXT };
 })();
