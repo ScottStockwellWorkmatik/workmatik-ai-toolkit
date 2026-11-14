@@ -267,6 +267,24 @@
   function statusText(s) { return s === 'weak' ? 'weak' : s === 'unscored' ? 'not yet scored' : s === 'oos' ? 'out of scope' : s === 'ok' ? 'ok' : 'not checked'; }
   var WAVES = [['now', 'Start now'], ['next', 'Start next'], ['quick', 'Quick wins'], ['fix', 'Fix first, then build'], ['hold', 'Hold'], ['hold-prohibited', 'Do not proceed']];
 
+
+  function renderModel(host, C) {
+    var AR = window.WorkmatikArchetypes, SM = window.WorkmatikStrategy; if (!AR || !SM || !SM.ranked().length) return;
+    var capScores = F.capability ? F.capability.scores : null, oos = F.capability ? F.capability.oos : null, dom = null;
+    if (C.domains) { dom = {}; C.domains.forEach(function (d) { dom[d.d.id] = d.avg; }); }
+    var g = AR.gapLevels(capScores, oos, dom), rec = AR.recommend(SM.state(), g.levels);
+    var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank). Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
+    if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Rank at least one strategy priority.')); host.appendChild(sec); return; }
+    var b = rec.best;
+    sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
+    if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so test both.'));
+    sec.appendChild(table(['Model', 'Strategy points', 'Gap penalty', 'Score', 'Gaps to close'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.points), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3], [24, 12, 12, 10, 42]));
+    var na = Object.keys(g.assessed).filter(function (k) { return !g.assessed[k]; });
+    if (na.length) sec.appendChild(el('p', 'hint', 'Not assessed, so no gap counted: ' + na.map(function (k) { return AR.gapAreas.filter(function (a) { return a.id === k; })[0].name; }).join('; ') + '. Load the AI Capability Assessment and AI Skills Assessment files to test these.'));
+    if (rec.ignored.length) sec.appendChild(el('p', 'hint', 'Ignored, no best-fit model chosen: ' + rec.ignored.join('; ') + '.'));
+    host.appendChild(sec);
+  }
+
   function renderRoadmap() {
     var host = $('roadmapBody'); host.textContent = '';
     var items = loadedItems(), hasStrat = !!(window.WorkmatikStrategy && window.WorkmatikStrategy.ranked().length); $('roadmapEmpty').hidden = items.length > 0 || hasStrat; host.hidden = !(items.length || hasStrat); if (!items.length && !hasStrat) return;
@@ -282,6 +300,7 @@
     host.appendChild(cards);
     C.warnings.forEach(function (w) { var b = el('div', 'flagbox'); b.appendChild(el('strong', null, 'Check. ')); b.appendChild(document.createTextNode(w)); host.appendChild(b); });
 
+    renderModel(host, C);
     if (C.strat) {
       var P = C.strat, sp = section('Priorities and what supports them', 'From the Strategy tab. Each tracked priority is traced to the workflows you tagged to it, then to the capabilities, skill domains and roles those workflows depend on.');
       if (P.purpose) sp.appendChild(el('p', null, 'Purpose: ' + P.purpose));
