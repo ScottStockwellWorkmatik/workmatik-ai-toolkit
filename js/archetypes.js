@@ -28,21 +28,22 @@
   function rankWeight(rank) { return rank >= 1 ? 1 / rank : 0; }
 
   // Work modes: the kind of work a person is accountable for at a given moment. One person can work in more than one mode.
-  // This is the Workmatik framework, not a research finding. Innovator is a mindset that cuts across all four, not a fifth mode.
+  // This is the Workmatik framework, not a research finding. Innovator is a mindset that cuts across all five, not a sixth mode. Builder is an interim mode, expected to merge into Practitioner.
   var MODE_LABEL = 'work mode';
   var MODES = [
     { id: 'S', name: 'Strategist', text: 'Owns outcomes and makes judgement calls. Sets direction for agents, decides when AI output is good enough and when it needs human intervention, and holds the commercial accountability for the pod\'s results.' },
     { id: 'O', name: 'Orchestrator', text: 'Designs and manages the agent workflows. Defines the quality parameters agents work within, supervises execution at scale, catches failure modes before they compound, and keeps improving the workflow design as capability matures.' },
+    { id: 'B', name: 'Builder', text: 'Builds and maintains the agents and automations that the workflows run on, and tests them before others rely on them. An interim mode: expected to merge into Practitioner as agent building becomes a core skill.' },
     { id: 'G', name: 'Governor', text: 'Owns the human decision gates: brand safety, compliance review, quality assurance on AI-generated content, and escalation when an agent output falls outside acceptable parameters.' },
     { id: 'P', name: 'Practitioner', text: 'Teams with the agents and uses AI to deliver campaigns, build relationships and drive impact, to delight customers with the organisation\'s products and services.' }
   ];
   // How much each organisation model leans on each work mode: H high, M medium, L low. Draft ratings from the research brief, to test with clients.
   var MODEL_MODES = {
-    A: { S: 'M', O: 'H', G: 'H', P: 'M' },
-    B: { S: 'M', O: 'M', G: 'M', P: 'H' },
-    C: { S: 'H', O: 'M', G: 'M', P: 'H' },
-    D: { S: 'H', O: 'M', G: 'H', P: 'H' },
-    E: { S: 'H', O: 'H', G: 'M', P: 'L' }
+    A: { S: 'M', O: 'H', B: 'M', G: 'H', P: 'M' },
+    B: { S: 'M', O: 'M', B: 'H', G: 'M', P: 'H' },
+    C: { S: 'H', O: 'M', B: 'M', G: 'M', P: 'H' },
+    D: { S: 'H', O: 'M', B: 'M', G: 'H', P: 'H' },
+    E: { S: 'H', O: 'H', B: 'H', G: 'M', P: 'L' }
   };
   // Gap weighting: what each organisation model depends on. A gap lowers the model's score and is shown as a "gap to close"; it never removes a model.
   // Weights are working hypotheses, editable on the Rules tab, to calibrate with real cases.

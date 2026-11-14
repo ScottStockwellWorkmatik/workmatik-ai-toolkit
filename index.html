@@ -184,26 +184,28 @@
   <div class="usecase"><b>Use case</b> = an AI intervention at one activity or step, or a redesign of a whole workflow. It needs capabilities (the function can support it) and skills (people can deliver it).</div>
 
   <h2>Work modes</h2>
-  <p class="lead">A work mode is the kind of work a person is accountable for at a given moment. One person can work in more than one mode, so a campaign manager might be a Practitioner in one task and an Orchestrator in the next. Work modes are the Workmatik framework, not research findings.</p>
+  <p class="lead">A work mode is the kind of work a person is accountable for at a given moment. One person can work in more than one mode, so a campaign manager might be a Practitioner in one task and an Orchestrator in the next. Work modes are the Workmatik framework, not research findings. They describe the type of person who does a job, not the job itself.</p>
   <table class="defs">
     <thead><tr><th>Work mode</th><th>What they do</th><th>In the kitchen</th></tr></thead>
     <tbody>
       <tr><td><b>Strategist</b></td><td>Owns outcomes and makes judgement calls. Sets direction for agents, decides when AI output is good enough and when it needs human intervention, and holds the commercial accountability for the pod&rsquo;s results.</td><td>The head chef, who decides the menu and when a dish is good enough to leave the pass</td></tr>
       <tr><td><b>Orchestrator</b></td><td>Designs and manages the agent workflows. Defines the quality parameters agents work within, supervises execution at scale, catches failure modes before they compound, and keeps improving the workflow design as capability matures.</td><td>The kitchen manager who designs the stations and how orders flow between them</td></tr>
+      <tr><td><b>Builder</b></td><td>Builds and maintains the agents and automations that the workflows run on, and tests them before others rely on them. An interim mode: as agent building becomes a core skill, it is expected to merge into Practitioner.</td><td>The person who sets up and maintains the new equipment so the cooks can use it</td></tr>
       <tr><td><b>Governor</b></td><td>Owns the human decision gates: brand safety, compliance review, quality assurance on AI-generated content, and escalation when an agent output falls outside acceptable parameters.</td><td>The person who checks allergens and hygiene before a plate goes out</td></tr>
       <tr><td><b>Practitioner</b></td><td>Teams with the agents and uses AI to deliver campaigns, build relationships and drive impact, to delight customers with the organisation&rsquo;s products and services.</td><td>The cook who works the station with the new equipment</td></tr>
     </tbody>
   </table>
-  <p class="hint"><b>Mindset is different.</b> A mindset is how someone works across all four modes, such as an innovator&rsquo;s curiosity. It is not a fifth mode: an innovative Governor and an innovative Practitioner still do different work.</p>
+  <p class="hint"><b>Mindset is different.</b> A mindset is how someone works across all five modes, such as an innovator&rsquo;s curiosity. It is not a sixth mode: an innovative Governor and an innovative Practitioner still do different work.</p>
+  <p class="hint"><b>Related research.</b> McKinsey &amp; Company, &ldquo;From anxiety to advantage: A marketing organization that thrives with AI&rdquo; (June 2026), names builders, orchestrators and standard bearers as marketing skill types and describes the same shift from a pyramid to a possible diamond. https://www.mckinsey.com/capabilities/growth-marketing-and-sales/our-insights/from-anxiety-to-advantage-a-marketing-organization-that-thrives-with-ai</p>
   <h3>How much each organisation model leans on each work mode</h3>
   <table class="defs">
-    <thead><tr><th>Organisation model</th><th>Strategist</th><th>Orchestrator</th><th>Governor</th><th>Practitioner</th></tr></thead>
+    <thead><tr><th>Organisation model</th><th>Strategist</th><th>Orchestrator</th><th>Builder</th><th>Governor</th><th>Practitioner</th></tr></thead>
     <tbody>
-      <tr><td><b>A</b> Governed hub</td><td>Medium</td><td>High</td><td>High</td><td>Medium</td></tr>
-      <tr><td><b>B</b> Hub and spoke</td><td>Medium</td><td>Medium</td><td>Medium</td><td>High</td></tr>
-      <tr><td><b>C</b> Outcome pods on a shared platform</td><td>High</td><td>Medium</td><td>Medium</td><td>High</td></tr>
-      <tr><td><b>D</b> Fixed base with assembled crews</td><td>High</td><td>Medium</td><td>High</td><td>High</td></tr>
-      <tr><td><b>E</b> Orchestrator-led lean team</td><td>High</td><td>High</td><td>Medium</td><td>Low</td></tr>
+      <tr><td><b>A</b> Governed hub</td><td>Medium</td><td>High</td><td>Medium</td><td>High</td><td>Medium</td></tr>
+      <tr><td><b>B</b> Hub and spoke</td><td>Medium</td><td>Medium</td><td>High</td><td>Medium</td><td>High</td></tr>
+      <tr><td><b>C</b> Outcome pods on a shared platform</td><td>High</td><td>Medium</td><td>Medium</td><td>Medium</td><td>High</td></tr>
+      <tr><td><b>D</b> Fixed base with assembled crews</td><td>High</td><td>Medium</td><td>Medium</td><td>High</td><td>High</td></tr>
+      <tr><td><b>E</b> Orchestrator-led lean team</td><td>High</td><td>High</td><td>High</td><td>Medium</td><td>Low</td></tr>
     </tbody>
   </table>
   <p class="hint">Draft ratings built from the research brief&rsquo;s description of each model. They are a starting point to test with clients, not findings.</p>
@@ -324,7 +326,7 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
 <script src="js/workmatik-shared.js?v=5"></script>
-<script src="js/archetypes.js?v=5"></script>
+<script src="js/archetypes.js?v=6"></script>
 <script src="js/strategy-matrix.js?v=9"></script>
 <script src="js/organisation.js?v=2"></script>
 <script src="js/strategy.js?v=15"></script>
