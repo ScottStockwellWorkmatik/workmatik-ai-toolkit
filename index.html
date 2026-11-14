@@ -22,7 +22,7 @@
 <meta name="apple-mobile-web-app-title" content="AI Toolkit">
 <link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="css/styles.css?v=1">
-<link rel="stylesheet" href="css/toolkit.css?v=8">
+<link rel="stylesheet" href="css/toolkit.css?v=10">
 <link rel="stylesheet" href="css/framework.css?v=1">
 <link rel="stylesheet" href="css/workmatik-shared.css?v=3x">
 </head>
@@ -45,20 +45,26 @@
   <div class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" id="tab-path" aria-controls="panel-path" aria-selected="true">Path</button>
     <button class="tab" role="tab" id="tab-strategy" aria-controls="panel-strategy" aria-selected="false" tabindex="-1">Strategy</button>
+    <button class="tab" role="tab" id="tab-organisation" aria-controls="panel-organisation" aria-selected="false" tabindex="-1">Organisation</button>
     <button class="tab" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1">Files</button>
     <button class="tab" role="tab" id="tab-roadmap" aria-controls="panel-roadmap" aria-selected="false" tabindex="-1">Roadmap</button>
-    <button class="tab" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Journey Map</button>
+    <button class="tab ref first" role="tab" id="tab-journey" aria-controls="panel-journey" aria-selected="false" tabindex="-1">Reference: Journey Map</button>
+    <button class="tab ref" role="tab" id="tab-skillsmap" aria-controls="panel-skillsmap" aria-selected="false" tabindex="-1">Reference: Skills Map</button>
     <button class="tab" role="tab" id="tab-framework" aria-controls="panel-framework" aria-selected="false" tabindex="-1">Framework</button>
     <button class="tab" role="tab" id="tab-rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">Rules</button>
     <button class="tab" role="tab" id="tab-guide" aria-controls="panel-guide" aria-selected="false" tabindex="-1">How to use</button>
   </div>
 
   <section id="panel-path" role="tabpanel" aria-labelledby="tab-path">
-  <div class="info-box"><strong>Five questions.</strong> Why are we doing this? What work delivers it? Who does it, and how? Can we (the organisation and the people)? In what order? <br><strong>How the path works.</strong> Work through the steps in order, or skip any you do not need. At the end of each tool, download its Excel file and keep it. The Files and Roadmap tabs here read all of them together. Use the same organisation or team name in every tool so the files match.</div>
+  <div class="info-box"><strong>Six questions.</strong> Why are we doing this? Where are we now? What work delivers it? Who does it, and how? Can we (the organisation and the people)? In what order? <br><strong>How the path works.</strong> Work through the steps in order, or skip any you do not need. At the end of each tool, download its Excel file and keep it. The Files and Roadmap tabs here read all of them together. Use the same organisation or team name in every tool so the files match.</div>
 
   <div class="tk-progress" aria-live="polite"><span id="progressText"></span><div class="bar" aria-hidden="true"><span id="progressBar"></span></div></div>
 
   <ol class="tk-steps" id="steps"></ol>
+
+  <h2 class="tk-ref-h">Reference</h2>
+  <p class="lead">These two are stand-alone reference tools. They are not steps on the path and they do not feed the recommendation.</p>
+  <ul class="tk-refs" id="refSteps"></ul>
 
   <div class="actions"><button class="btn" id="btnReset" type="button">Clear my progress</button></div>
   </section>
@@ -109,8 +115,20 @@
     <div id="roadmapBody" hidden></div>
   </section>
 
+  <section id="panel-organisation" role="tabpanel" aria-labelledby="tab-organisation" hidden>
+    <div id="orgStep"></div>
+  </section>
+
   <section id="panel-journey" role="tabpanel" aria-labelledby="tab-journey" hidden>
+    <div class="info-box"><strong>Reference.</strong> A generic map. It is not a step on the path and not a recommendation for your organisation.</div>
     <iframe class="tk-frame" id="frame-journey" data-src="journey/index.html?embed=1" title="Marketing AI Journey Map"></iframe>
+  </section>
+
+  <section id="panel-skillsmap" role="tabpanel" aria-labelledby="tab-skillsmap" hidden>
+    <div class="info-box"><strong>Reference.</strong> The Marketing Skills Map is a stand-alone tool. It is not a step on the path and it does not feed the recommendation.</div>
+    <h2>Marketing Skills Map</h2>
+    <p>Rank the ten skills that matter most to a team and rate how well the team covers each one. It opens in a new tab, and your organisation details are carried across for you.</p>
+    <p><a class="btn primary" href="../ai-skills-map/" target="_blank" rel="noopener">Open the Marketing Skills Map</a></p>
   </section>
 
   <section id="panel-framework" role="tabpanel" aria-labelledby="tab-framework" hidden>
@@ -178,16 +196,17 @@
   </div>
 
   <h2>How the tools fit together</h2>
-  <p class="lead">Read in order, they answer a sequence of questions.</p>
+  <p class="lead">Read in order, they answer six questions: <b>Why</b> are we doing this, <b>where are we now</b>, <b>what work</b> delivers it, <b>who</b> does it and how, <b>can we</b> (organisation and people), and <b>in what order</b>. The Journey Map and Skills Map are reference modules outside the path.</p>
   <div class="apps">
-    <div class="app"><div><span class="step-n">1</span><h3 style="display:inline">AI Toolkit: Strategy</h3></div><span class="lvl">Strategy</span><p class="q">What is the organisation for, and how will we know it is succeeding? Record your purpose and the measures that show business success, then rank the few that matter most. Every later choice traces back to these.</p><a class="go" href="#strategy">Open the Strategy tab</a></div>
-    <div class="app"><div><span class="step-n">2</span><h3 style="display:inline">AI Workflow Assessment</h3></div><span class="lvl">Work</span><p class="q">Which workflows first? Scores 31 starter workflows (or your own) on value, feasibility and risk, adds an indicative EU AI Act tier, and ranks the use cases to start with. You choose and tag workflows first, then load your Roles file to check they agree before scoring.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-workflow-assessment/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">3</span><h3 style="display:inline">AI Roles Assessment</h3></div><span class="lvl">Work</span><p class="q">Where could AI apply? Classifies 519 activities across 31 roles, in six groups, as full automation, augmentation or human only. Loads your Workflow file to tick the activities your workflows need. You can add your own roles and activities.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-roles-assessment/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">4</span><h3 style="display:inline">AI Capability Assessment</h3></div><span class="lvl">Function level</span><p class="q">Can the function support it? Scores 35 capabilities across seven categories and shows critical gaps.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-capability-assessment/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">5</span><h3 style="display:inline">AI Skills Assessment</h3></div><span class="lvl">Individual level</span><p class="q">Can the people deliver it? Rates six domains across five levels, with EU AI Act indicators.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-assessment/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">6</span><h3 style="display:inline">Marketing Skills Map</h3></div><span class="lvl">Team level</span><p class="q">Which skills matter most, and where does the team have gaps? Ranks the top 10 skills and rates coverage.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-map/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">7</span><h3 style="display:inline">Marketing AI Journey Map</h3></div><span class="lvl">Sequence</span><p class="q">In what order do we build it? Shows what each of 35 capability actions needs first and what it unlocks, across a leader flow and a marketer flow.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-journey-map/">Open the tool</a></div>
-    <div class="app"><div><span class="step-n">8</span><h3 style="display:inline">AI Toolkit: Roadmap</h3></div><span class="lvl">Roadmap</span><p class="q">What do we do first, and what must be fixed before that? A guided path through the tools above. Its Roadmap tab combines their Excel files with your strategy into one sequence of workflows, foundations and skills to build.</p><a class="go" href="./">Open the toolkit</a></div>
+    <div class="app"><div><span class="step-n">1</span><h3 style="display:inline">AI Toolkit: Strategy</h3></div><span class="lvl">Why?</span><p class="q">What is the organisation for, and how will we know it is succeeding? Record your purpose and the measures that show business success, then rank the few that matter most. Every later choice traces back to these.</p><a class="go" href="#strategy">Open the Strategy tab</a></div>
+    <div class="app"><div><span class="step-n">2</span><h3 style="display:inline">AI Toolkit: Organisation</h3></div><span class="lvl">Where are we now?</span><p class="q">Where are we now? Answer 23 short questions about how marketing is organised today: who decides, where AI skills sit, governance, sourcing, size and AI position. It is a snapshot of today, not a target. Add your own options.</p><a class="go" href="#organisation">Open the Organisation tab</a></div>
+    <div class="app"><div><span class="step-n">3</span><h3 style="display:inline">AI Workflow Assessment</h3></div><span class="lvl">What work?</span><p class="q">Which workflows first? Scores 31 starter workflows (or your own) on value, feasibility and risk, adds an indicative EU AI Act tier, and ranks the use cases to start with. You choose and tag workflows first, then load your Roles file to check they agree before scoring.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-workflow-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">4</span><h3 style="display:inline">AI Roles Assessment</h3></div><span class="lvl">Who, and how?</span><p class="q">Where could AI apply? Classifies 519 activities across 31 roles, in six groups, as full automation, augmentation or human only. Loads your Workflow file to tick the activities your workflows need. You can add your own roles and activities.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-roles-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">5</span><h3 style="display:inline">AI Capability Assessment</h3></div><span class="lvl">Can we? Organisation</span><p class="q">Can the function support it? Scores 35 capabilities across seven categories and shows critical gaps.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-capability-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">6</span><h3 style="display:inline">AI Skills Assessment</h3></div><span class="lvl">Can we? People</span><p class="q">Can the people deliver it? Rates six domains across five levels, with EU AI Act indicators.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-assessment/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">7</span><h3 style="display:inline">AI Toolkit: Roadmap</h3></div><span class="lvl">In what order?</span><p class="q">What do we do first, and what must be fixed before that? A guided path through the tools above. Its Roadmap tab combines their Excel files with your strategy into one sequence of workflows, foundations and skills to build.</p><a class="go" href="./">Open the toolkit</a></div>
+    <div class="app"><div><span class="step-n">R</span><h3 style="display:inline">Reference: Marketing AI Journey Map</h3></div><span class="lvl">Reference</span><p class="q">How could the foundations be built? Shows what each of 35 capability actions needs first and what it unlocks, across a leader flow and a marketer flow. A stand-alone reference module: not a step on the path.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-journey-map/">Open the tool</a></div>
+    <div class="app"><div><span class="step-n">R</span><h3 style="display:inline">Reference: Marketing Skills Map</h3></div><span class="lvl">Reference</span><p class="q">Which skills matter most, and where does the team have gaps? Ranks the top 10 skills and rates coverage. A stand-alone reference module: not a step on the path.</p><a class="go" href="https://scottstockwellworkmatik.github.io/ai-skills-map/">Open the tool</a></div>
   </div>
 
   <h2>How the files connect</h2>
@@ -281,7 +300,8 @@
 <script src="lib/exceljs.min.js"></script>
 <script src="js/workmatik-shared.js?v=5"></script>
 <script src="js/strategy-matrix.js?v=7"></script>
-<script src="js/strategy.js?v=9"></script>
-<script src="js/path.js?v=6"></script>
+<script src="js/organisation.js?v=2"></script>
+<script src="js/strategy.js?v=11"></script>
+<script src="js/path.js?v=7"></script>
 </body>
 </html>

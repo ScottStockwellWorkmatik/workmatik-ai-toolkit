@@ -116,6 +116,7 @@
         return readBuf(f).then(function (buf) {
           var wbk = null; try { wbk = XLSX.read(buf, { type: 'array' }); } catch (e) {}
           if (wbk && window.WorkmatikStrategy && window.WorkmatikStrategy.isStrategyBook(wbk)) { window.WorkmatikStrategy.importBuffer(buf, f.name, msgs); return; }
+          if (wbk && window.WorkmatikOrganisation && window.WorkmatikOrganisation.isOrganisationBook(wbk)) { window.WorkmatikOrganisation.importBuffer(buf, f.name, msgs); return; }
           var p; try { p = detect(wbk || XLSX.read(buf, { type: 'array' })); } catch (e) { msgs.appendChild(el('li', 'bad', f.name + ' was not recognised as a file from a Workmatik tool.')); return; }
           p.file = f.name;
           var fk = Object.assign({}, p.kv || {}); if (!fk['Organisation'] && p.kind !== 'skills') fk['Organisation'] = p.org;
@@ -414,11 +415,12 @@
     [['Where AI applies', 'AI Roles Assessment', 'Role IDs and activity IDs'], ['Suggested sequence', 'AI Workflow Assessment (and the AI Capability Assessment to test readiness)', 'Workflow IDs, capability IDs'], ['Foundations to fix first', 'AI Capability Assessment and AI Workflow Assessment', 'Capability IDs'], ['Skills to build', 'AI Skills Assessment and/or Marketing Skills Map', 'Skill domain IDs (SD01 to SD06), skill IDs (MS01 to MS10)']].forEach(function (r) { var tr = el('tr'); r.forEach(function (c) { tr.appendChild(el('td', null, c)); }); b2.appendChild(tr); });
     f.appendChild(b2);
   }
-  var TABS = ['path', 'strategy', 'files', 'roadmap', 'journey', 'framework', 'rules', 'guide'];
+  var TABS = ['path', 'strategy', 'organisation', 'files', 'roadmap', 'journey', 'skillsmap', 'framework', 'rules', 'guide'];
   function showTab(name) {
     TABS.forEach(function (t) { var on = t === name; $('tab-' + t).setAttribute('aria-selected', on ? 'true' : 'false'); $('tab-' + t).tabIndex = on ? 0 : -1; $('panel-' + t).hidden = !on; });
     if (name === 'roadmap') renderRoadmap();
     if (name === 'strategy' && window.__renderStrategyTab) window.__renderStrategyTab();
+    if (name === 'organisation' && window.__renderOrganisationTab) window.__renderOrganisationTab();
     if (name === 'journey') { var fr = $('frame-' + name); if (!fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src')); }
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
     window.scrollTo(0, 0);
