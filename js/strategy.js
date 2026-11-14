@@ -296,6 +296,40 @@
     host.appendChild(sec);
   }
 
+  function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
+  // Shape of the team by level: today, and the target with people (solid) and the work agents take on (outline). Drawn from the client's own numbers.
+  function renderShape(host) {
+    var AR = window.WorkmatikArchetypes, OG = window.WorkmatikOrganisation; if (!AR || !OG) return;
+    var sh = OG.shape(), L = AR.levels, has = function (o) { return Object.keys(o).length > 0; };
+    var sec = section('Shape of the team', 'People at each level (full-time equivalents), from the Organisation tab. The outline is the work agents take on: today\u2019s number less the people in the target. Reference shapes: McKinsey & Company, \u201cFrom anxiety to advantage: A marketing organization that thrives with AI\u201d (June 2026), describes a pyramid today and a possible diamond. PwC, \u201cNo more pyramids\u201d (January 2026), argues the diamond should be a deliberate choice and suggests an hourglass for knowledge-intensive firms.');
+    if (!has(sh.today)) { sec.appendChild(el('p', null, 'Enter the FTE at each level on the Organisation tab (Team shape by level) to see the shape.')); host.appendChild(sec); return; }
+    var today = L.map(function (x) { return sh.today[x.id] || 0; }), target = L.map(function (x) { return sh.target[x.id] || 0; }), hasT = has(sh.target);
+    var max = Math.max.apply(null, today.concat(target)) || 1, W = 330, rowH = 34, gap = 6, top = 34, H = top + L.length * (rowH + gap) + 8;
+    function panel(title, label, vals, outline) {
+      var svg = svgEl('svg', { viewBox: '0 0 ' + (W + 150) + ' ' + H, role: 'img', 'aria-label': title + ': ' + (label || 'shape') + '. ' + L.map(function (x, i) { return x.name + ' ' + vals[i]; }).join(', ') });
+      svg.style.width = '100%'; svg.style.maxWidth = '520px';
+      svg.appendChild(svgEl('text', { x: 150 + W / 2, y: 18, 'text-anchor': 'middle', 'font-weight': '600', 'font-size': '14', fill: 'currentColor' }, title + (label ? ': ' + label : '')));
+      for (var i = L.length - 1; i >= 0; i--) {
+        var y = top + (L.length - 1 - i) * (rowH + gap), cx = 150 + W / 2, w = vals[i] / max * W;
+        svg.appendChild(svgEl('text', { x: 144, y: y + rowH / 2 + 4, 'text-anchor': 'end', 'font-size': '12', fill: 'currentColor' }, L[i].name));
+        if (outline) { var ow = today[i] / max * W; svg.appendChild(svgEl('rect', { x: cx - ow / 2, y: y, width: ow, height: rowH, fill: 'none', stroke: '#4E80BD', 'stroke-width': '1.5' })); }
+        svg.appendChild(svgEl('rect', { x: cx - w / 2, y: y, width: w, height: rowH, fill: '#323B4B' }));
+        svg.appendChild(svgEl('text', { x: cx, y: y + rowH / 2 + 4, 'text-anchor': 'middle', 'font-size': '12', fill: w > 28 ? '#ffffff' : '#323B4B', dy: w > 28 ? 0 : -rowH / 2 - 2 }, String(vals[i])));
+      }
+      return svg;
+    }
+    var grid = el('div'); grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px';
+    grid.appendChild(panel('Today', AR.classifyShape(today), today, false));
+    if (hasT) grid.appendChild(panel('Target', AR.classifyShape(target), target, true));
+    sec.appendChild(grid);
+    if (!hasT) sec.appendChild(el('p', 'hint', 'Enter the people at each level in the target to see the target shape and the work agents take on.'));
+    else {
+      var tT = today.reduce(function (a, b) { return a + b; }, 0), tG = target.reduce(function (a, b) { return a + b; }, 0);
+      sec.appendChild(el('p', 'hint', 'Total people: ' + tT + ' today, ' + tG + ' in the target. Solid bars are people, outlines are the work agents take on. The shapes are the result of your numbers, not a recommendation.'));
+    }
+    host.appendChild(sec);
+  }
+
   function renderRoadmap() {
     var host = $('roadmapBody'); host.textContent = '';
     var items = loadedItems(), hasStrat = !!(window.WorkmatikStrategy && window.WorkmatikStrategy.ranked().length); $('roadmapEmpty').hidden = items.length > 0 || hasStrat; host.hidden = !(items.length || hasStrat); if (!items.length && !hasStrat) return;
@@ -312,6 +346,7 @@
     C.warnings.forEach(function (w) { var b = el('div', 'flagbox'); b.appendChild(el('strong', null, 'Check. ')); b.appendChild(document.createTextNode(w)); host.appendChild(b); });
 
     renderModel(host, C);
+    renderShape(host);
     if (C.strat) {
       var P = C.strat, sp = section('Priorities and what supports them', 'From the Strategy tab. Each tracked priority is traced to the workflows you tagged to it, then to the capabilities, skill domains and roles those workflows depend on.');
       if (P.purpose) sp.appendChild(el('p', null, 'Purpose: ' + P.purpose));
