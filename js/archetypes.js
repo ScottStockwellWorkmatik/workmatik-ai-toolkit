@@ -187,6 +187,22 @@
     if (midMin < v[0] && midMin < v[3]) return 'Hourglass';
     return 'Other';
   }
+  // Editable rules (Rules tab). Defaults are copied once so they can be restored.
+  var DEFAULTS = { weights: JSON.parse(JSON.stringify(GAP_WEIGHTS)), points: CONTEXT.map(function (r) { return r.p; }), notReady: NOT_READY, margin: MARGIN, augShare: AUG_SHARE };
+  function setRule(kind, a, b, v) {
+    v = parseFloat(v); if (isNaN(v) || v < 0) return;
+    if (kind === 'weight') GAP_WEIGHTS[a][b] = v;
+    else if (kind === 'context') CONTEXT[a].p = v;
+    else if (kind === 'notReady') { NOT_READY = v; api.notReady = v; }
+    else if (kind === 'margin') { MARGIN = v; api.margin = v; }
+    else if (kind === 'augShare') { AUG_SHARE = Math.min(1, v); api.augShare = AUG_SHARE; }
+  }
+  function resetRules() {
+    Object.keys(DEFAULTS.weights).forEach(function (m) { Object.keys(DEFAULTS.weights[m]).forEach(function (g) { GAP_WEIGHTS[m][g] = DEFAULTS.weights[m][g]; }); });
+    CONTEXT.forEach(function (r, i) { r.p = DEFAULTS.points[i]; });
+    NOT_READY = DEFAULTS.notReady; MARGIN = DEFAULTS.margin; AUG_SHARE = DEFAULTS.augShare;
+    api.notReady = NOT_READY; api.margin = MARGIN; api.augShare = AUG_SHARE;
+  }
   function byId(id) { return LIST.filter(function (a) { return a.id === id; })[0]; }
-  window.WorkmatikArchetypes = { list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, augShare: AUG_SHARE, classifyShape: classifyShape, context: CONTEXT };
+  var api = window.WorkmatikArchetypes = { setRule: setRule, resetRules: resetRules, list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, augShare: AUG_SHARE, classifyShape: classifyShape, context: CONTEXT };
 })();

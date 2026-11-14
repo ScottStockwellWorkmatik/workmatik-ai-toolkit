@@ -295,6 +295,16 @@
         <label><span class="lbl">Skill domain is a gap at or below (0 to 4)</span><input id="rSkill" type="number" min="0" max="4" step="0.5"></label>
       </div>
     </div>
+    <div class="card" id="modelRulesCard">
+      <h2>Organisation model scoring</h2>
+      <p class="hint">These weights decide how the recommended model is chosen. Change a value and the Strategy, Organisation and Roadmap results follow. Values reset when you leave the page. They are the author&rsquo;s proposals to calibrate with real cases.</p>
+      <div class="thr" id="modelScalars"></div>
+      <h3>Gap weights: points taken off a model for each level of gap (a large gap counts double)</h3>
+      <div class="table-scroll"><table id="gapWeightTable"></table></div>
+      <h3>Organisation answers: points added to a model</h3>
+      <div class="table-scroll"><table id="contextTable"></table></div>
+      <p><button type="button" class="btn" id="btnResetModelRules">Restore proposed values</button></p>
+    </div>
     <div class="card">
       <h2>How the sequence is built</h2>
       <ol class="steps">
@@ -324,10 +334,10 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/exceljs.min.js"></script>
 <script src="js/workmatik-shared.js?v=5"></script>
-<script src="js/archetypes.js?v=10"></script>
+<script src="js/archetypes.js?v=11"></script>
 <script src="js/strategy-matrix.js?v=9"></script>
 <script src="js/organisation.js?v=4"></script>
-<script src="js/strategy.js?v=22"></script>
+<script src="js/strategy.js?v=23"></script>
 <script src="js/path.js?v=7"></script>
 </body>
 </html>

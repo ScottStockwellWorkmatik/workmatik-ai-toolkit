@@ -541,7 +541,38 @@
   }
 
   // ---------- rules tab and guide
+  function renderModelRules() {
+    var A = window.WorkmatikArchetypes; if (!A) return;
+    function changed() { if (!$('panel-roadmap').hidden) renderRoadmap(); }
+    function num(val, min, max, step, fn, label) {
+      var i = el('input'); i.type = 'number'; i.min = min; i.max = max; i.step = step; i.value = val; i.setAttribute('aria-label', label);
+      i.addEventListener('input', function () { fn(i.value); changed(); }); return i;
+    }
+    var sc = $('modelScalars'); sc.textContent = '';
+    [['Not ready yet when gap penalty reaches', 'notReady', A.notReady, 0, 10, 0.5], ['Show a runner-up within (points)', 'margin', A.margin, 0, 10, 0.5], ['Share of an augmented activity assumed to move to agents (0 to 1)', 'augShare', A.augShare, 0, 1, 0.05]].forEach(function (x) {
+      var lb = el('label'); lb.appendChild(el('span', 'lbl', x[0])); lb.appendChild(num(x[2], x[3], x[4], x[5], function (v) { A.setRule(x[1], null, null, v); }, x[0])); sc.appendChild(lb);
+    });
+    var g = $('gapWeightTable'); g.textContent = '';
+    var hr = el('tr'); hr.appendChild(el('th', null, 'Model')); A.gapAreas.forEach(function (a) { hr.appendChild(el('th', null, a.name)); });
+    var th = el('thead'); th.appendChild(hr); g.appendChild(th); var tb = el('tbody');
+    A.list.forEach(function (m) {
+      var tr = el('tr'); tr.appendChild(el('td', null, m.id + ' ' + m.name));
+      A.gapAreas.forEach(function (a) { var td = el('td'); td.appendChild(num(A.gapWeights[m.id][a.id], 0, 5, 0.5, function (v) { A.setRule('weight', m.id, a.id, v); }, m.name + ': ' + a.name)); tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    g.appendChild(tb);
+    var c = $('contextTable'); c.textContent = '';
+    var h3 = el('tr'); ['Model', 'Organisation answer', 'Points', 'Why'].forEach(function (x) { h3.appendChild(el('th', null, x)); });
+    var th3 = el('thead'); th3.appendChild(h3); c.appendChild(th3); var tb3 = el('tbody');
+    A.context.forEach(function (r, i) {
+      var tr = el('tr'); tr.appendChild(el('td', null, r.m)); tr.appendChild(el('td', null, r.f.replace(/_/g, ' ') + ': ' + r.a.join(' or ')));
+      var td = el('td'); td.appendChild(num(r.p, 0, 5, 0.5, function (v) { A.setRule('context', i, null, v); }, r.m + ' ' + r.f)); tr.appendChild(td); tr.appendChild(el('td', null, r.why)); tb3.appendChild(tr);
+    });
+    c.appendChild(tb3);
+    $('btnResetModelRules').onclick = function () { A.resetRules(); renderModelRules(); changed(); };
+  }
   function renderRules() {
+    renderModelRules();
     var t = $('mapTable'); t.textContent = '';
     var hr = el('tr'); ['Capability category', 'Skill domains'].forEach(function (h) { hr.appendChild(el('th', null, h)); }); var th = el('thead'); th.appendChild(hr); t.appendChild(th); var tb = el('tbody');
     REF.categories.forEach(function (c, i) { var tr = el('tr'); tr.appendChild(el('td', null, c)); tr.appendChild(el('td', null, (REF.catToDomains[String(i)] || []).map(function (id) { return id + ' ' + domById(id).name; }).join('; '))); tb.appendChild(tr); });
