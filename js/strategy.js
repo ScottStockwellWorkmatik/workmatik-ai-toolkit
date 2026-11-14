@@ -279,12 +279,15 @@
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so the case for each is close. Both are worth testing, and the choice is yours.'));
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
-    sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Gaps to close'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
+    sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
+    if (rec.common.length) { sec.appendChild(el('h3', null, 'Gaps that affect every model')); sec.appendChild(el('p', null, 'Fix these whichever model you choose: ' + rec.common.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') + '. They are left out of the model scores, apart from the extra weight a model puts on them.')); }
     sec.appendChild(el('h3', null, 'Why ' + b.name));
     var ul = el('ul'); b.why.forEach(function (w) { ul.appendChild(el('li', null, 'Strategy: ' + w.cell + ' (priority ' + w.rank + ') adds ' + round1(w.points) + '.')); });
     b.contextWhy.forEach(function (w) { ul.appendChild(el('li', null, 'Organisation: ' + w.text + ' (' + w.answer + ') adds ' + round1(w.points) + '.')); });
-    b.gaps.forEach(function (w) { ul.appendChild(el('li', null, 'Gap to close: ' + w.name + ' lowers the score by ' + round1(w.points) + '.')); });
     sec.appendChild(ul);
+    sec.appendChild(el('h3', null, 'Gaps against ' + b.name));
+    if (b.gaps.length) { var gl = el('ul'); b.gaps.forEach(function (w) { gl.appendChild(el('li', null, w.name + (w.level === 2 ? ' (large)' : ' (partial)') + ' lowers the score by ' + round1(w.points) + '.')); }); sec.appendChild(gl); }
+    else sec.appendChild(el('p', null, 'No gaps specific to this model were found.'));
     sec.appendChild(el('h3', null, 'What would change the answer'));
     if (rec.flips.length) { var fl = el('ul'); rec.flips.slice(0, 5).forEach(function (f) { fl.appendChild(el('li', null, 'If ' + f.field.replace(/_/g, ' ') + ' were \u201c' + f.to + '\u201d (now ' + f.from + '), the best fit would be ' + f.model + '.')); }); sec.appendChild(fl); }
     else sec.appendChild(el('p', null, 'No single Organisation answer would change the best fit.'));

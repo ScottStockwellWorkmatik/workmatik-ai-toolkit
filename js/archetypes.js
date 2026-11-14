@@ -63,10 +63,10 @@
     E: { gov: 0.5, plat: 0.5, brief: 0.5, spoke: 0, all: 1.5 }
   };
   var NOT_READY = 3;
-  function gapPenalty(id, levels) {
+  function gapPenalty(id, levels, base) {
     var w = GAP_WEIGHTS[id] || {}, total = 0, gaps = [];
     GAP_AREAS.forEach(function (g) {
-      var lv = Number(levels && levels[g.id]) || 0, pts = (w[g.id] || 0) * lv;
+      var lv = Number(levels && levels[g.id]) || 0, pts = (w[g.id] || 0) * lv - ((base && base[g.id]) || 0);
       if (pts > 0) { total += pts; gaps.push({ id: g.id, name: g.name, level: lv, points: pts }); }
     });
     gaps.sort(function (a, b) { return b.points - a.points; });
@@ -137,10 +137,19 @@
       [POINTS.first, POINTS.second].forEach(function (p, i) { var id = pick[i]; if (!id) return; var v = p * w; pts[id] += v; why[id].push({ cell: label, rank: m.rank, points: v }); });
     });
     var cx = contextPoints(answers);
-    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels), st = pts[a.id], tot = st + cx.pts[a.id]; return { id: a.id, name: a.name, strategy: st, context: cx.pts[a.id], points: tot, penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: tot - g.penalty, why: why[a.id], contextWhy: cx.why[a.id] }; });
+    // A gap that every model depends on is a foundation to fix whichever model is chosen. Only the extra weight a model puts on it counts against that model,
+    // so "not ready yet" marks gaps that differ between models.
+    var common = [], base = {};
+    GAP_AREAS.forEach(function (g) {
+      var lv = Number(levels && levels[g.id]) || 0; if (lv <= 0) return;
+      var ws = LIST.map(function (a) { return (GAP_WEIGHTS[a.id] || {})[g.id] || 0; });
+      if (ws.some(function (x) { return x <= 0; })) return;
+      var b = Math.min.apply(null, ws) * lv; base[g.id] = b; common.push({ id: g.id, name: g.name, kind: g.kind, level: lv, points: b });
+    });
+    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels, base), st = pts[a.id], tot = st + cx.pts[a.id]; return { id: a.id, name: a.name, strategy: st, context: cx.pts[a.id], points: tot, penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: tot - g.penalty, why: why[a.id], contextWhy: cx.why[a.id] }; });
     rows.sort(function (x, y) { return y.score - x.score; });
     var best = rows[0], runner = rows[1] && best.score - rows[1].score <= MARGIN && rows[1].points > 0 ? rows[1] : null;
-    var rec = { rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
+    var rec = { common: common, rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
     // Exploration unit: strategy needs new customers or channels as well as efficiency, the team can fund a separate unit, and never for E.
     var needsNew = state.measures.some(function (m) { return m.rank >= 1 && m.row === 'SR02'; });
     var canFund = answers && (['51-200', 'Over 200'].indexOf(answers.headcount_band) >= 0 || (answers.exploration_unit && answers.exploration_unit !== 'No'));
