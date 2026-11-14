@@ -12,8 +12,8 @@
   function fresh() {
     return {
       purpose: '',
-      rows: STARTER_ROWS.map(function (l, i) { return { id: 'SR' + pad(i + 1, 2), label: l, source: 'starter' }; }),
-      cols: STARTER_COLS.map(function (l, i) { return { id: 'SC' + pad(i + 1, 2), label: l, source: 'starter' }; }),
+      rows: STARTER_ROWS.map(function (l, i) { return { id: 'SR' + pad(i + 1, 2), label: l, source: 'starter', arch: '' }; }),
+      cols: STARTER_COLS.map(function (l, i) { return { id: 'SC' + pad(i + 1, 2), label: l, source: 'starter', arch: '' }; }),
       measures: [],
       next: { measure: 1, row: 1, col: 1 }
     };
@@ -45,8 +45,8 @@
     var f = document.querySelector('[data-focus="' + m.id + '"]'); if (f) f.focus();
   }
   function removeMeasure(m) { S.measures.splice(S.measures.indexOf(m), 1); renumber(); save(); render(); }
-  function addRow() { S.rows.push({ id: 'SRC' + pad(S.next.row++, 2), label: 'New row', source: 'own' }); save(); render(); }
-  function addCol() { S.cols.push({ id: 'SCC' + pad(S.next.col++, 2), label: 'New column', source: 'own' }); save(); render(); }
+  function addRow() { S.rows.push({ id: 'SRC' + pad(S.next.row++, 2), label: 'New row', source: 'own', arch: '' }); save(); render(); }
+  function addCol() { S.cols.push({ id: 'SCC' + pad(S.next.col++, 2), label: 'New column', source: 'own', arch: '' }); save(); render(); }
   function removeRow(r) {
     var n = S.measures.filter(function (m) { return m.row === r.id; }).length;
     function go() { S.measures = S.measures.filter(function (m) { return m.row !== r.id; }); S.rows.splice(S.rows.indexOf(r), 1); renumber(); save(); render(); }
@@ -128,21 +128,33 @@
     host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your strategy. Keep this tab open until you have downloaded the file.'));
   }
 
+  // A row or column heading. Starter ones are fixed because the recommendation reads them. Ones the client adds carry a name, a choice of
+  // organisation model, and a Remove button. With no model chosen the addition is ignored when the model is recommended.
+  function structHead(x, max, kind, remove) {
+    var box = el('div', 'sm-struct');
+    if (x.source !== 'own') { box.appendChild(el('strong', 'sm-fixed', x.label)); box.appendChild(el('span', 'hint', 'Fixed')); return box; }
+    var i = el('input'); i.type = 'text'; i.value = x.label; i.maxLength = max; i.setAttribute('aria-label', kind + ' name');
+    i.addEventListener('input', function () { x.label = i.value; save(); renderRanked(); }); box.appendChild(i);
+    var sel = el('select', 'sm-arch'); sel.setAttribute('aria-label', 'Best-fit organisation model for ' + kind.toLowerCase() + ' ' + x.label);
+    var o0 = el('option', null, 'Best-fit organisation model...'); o0.value = ''; sel.appendChild(o0);
+    WorkmatikArchetypes.list.forEach(function (a) { var o = el('option', null, a.id + ' ' + a.name); o.value = a.id; if (x.arch === a.id) o.selected = true; sel.appendChild(o); });
+    sel.addEventListener('change', function () { x.arch = sel.value; save(); render(); }); box.appendChild(sel);
+    if (!x.arch) box.appendChild(el('span', 'hint', 'No model chosen: not used in the recommendation.'));
+    var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove ' + kind.toLowerCase() + ' ' + x.label); rm.addEventListener('click', remove); box.appendChild(rm);
+    return box;
+  }
+
   function render() {
     var host = $('strategyMatrix'); if (!host) return; host.textContent = '';
     var t = el('table', 'sm-table'), hr = el('tr'); hr.appendChild(el('th', null, ''));
     S.cols.forEach(function (c) {
-      var th = el('th'); var i = el('input'); i.type = 'text'; i.value = c.label; i.maxLength = 40; i.setAttribute('aria-label', 'Column name');
-      i.addEventListener('input', function () { c.label = i.value; save(); renderRanked(); }); th.appendChild(i);
-      var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove column ' + c.label); rm.addEventListener('click', function () { removeCol(c); }); th.appendChild(rm); hr.appendChild(th);
+      var th = el('th'); th.appendChild(structHead(c, 40, 'Column', function () { removeCol(c); })); hr.appendChild(th);
     });
     var addTh = el('th'); var ac = el('button', 'btn small sm-addstruct', 'Add column'); ac.type = 'button'; ac.addEventListener('click', addCol); addTh.appendChild(ac); hr.appendChild(addTh);
     var thead = el('thead'); thead.appendChild(hr); t.appendChild(thead);
     var tb = el('tbody');
     S.rows.forEach(function (r) {
-      var tr = el('tr'); var th = el('th', 'sm-rowhead'); var i = el('input'); i.type = 'text'; i.value = r.label; i.maxLength = 60; i.setAttribute('aria-label', 'Row name');
-      i.addEventListener('input', function () { r.label = i.value; save(); renderRanked(); }); th.appendChild(i);
-      var rm = el('button', 'btn small sm-remove', 'Remove'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove row ' + r.label); rm.addEventListener('click', function () { removeRow(r); }); th.appendChild(rm); tr.appendChild(th);
+      var tr = el('tr'); var th = el('th', 'sm-rowhead'); th.appendChild(structHead(r, 60, 'Row', function () { removeRow(r); })); tr.appendChild(th);
       S.cols.forEach(function (c) {
         var td = el('td', 'sm-cell');
         S.measures.filter(function (m) { return m.row === r.id && m.col === c.id; }).forEach(function (m) { td.appendChild(measureCard(m)); });
@@ -155,6 +167,7 @@
     var ar = el('button', 'btn small sm-addstruct', 'Add row'); ar.type = 'button'; ar.addEventListener('click', addRow); addTd.appendChild(ar); addTr.appendChild(addTd); tb.appendChild(addTr);
     t.appendChild(tb);
     var sc = el('div', 'table-scroll'); sc.appendChild(t); host.appendChild(sc);
+    host.appendChild(el('p', 'hint', 'The starter rows and columns are fixed because each cell points to the organisation models that suit it. A row or column you add counts in the recommendation only when you choose the organisation model that best fits it.'));
     renderRanked();
   }
   function renderRanked() {
@@ -180,12 +193,12 @@
   function sheets() {
     var meas = [['Measure ID', 'Row ID', 'Column ID', 'Measure', 'Baseline', 'Target', 'Owner', 'Rank']];
     S.measures.forEach(function (m) { meas.push([m.id, m.row, m.col, m.name, m.baseline, m.target, m.owner, m.rank >= 1 ? m.rank : '']); });
-    var rows = [['ID', 'Label', 'Source']]; S.rows.forEach(function (r) { rows.push([r.id, r.label, r.source]); });
-    var cols = [['ID', 'Label', 'Source']]; S.cols.forEach(function (c) { cols.push([c.id, c.label, c.source]); });
+    var rows = [['ID', 'Label', 'Source', 'Archetype']]; S.rows.forEach(function (r) { rows.push([r.id, r.label, r.source, r.arch || '']); });
+    var cols = [['ID', 'Label', 'Source', 'Archetype']]; S.cols.forEach(function (c) { cols.push([c.id, c.label, c.source, c.arch || '']); });
     return [
       ['Measures', meas, [11, 9, 10, 52, 16, 16, 20, 7]],
-      ['Rows', rows, [9, 40, 10]],
-      ['Columns', cols, [9, 40, 10]],
+      ['Rows', rows, [9, 40, 10, 12]],
+      ['Columns', cols, [9, 40, 10, 12]],
       ['Purpose', [['Purpose and strategy'], [S.purpose]], [100]],
       ['Workmatik data', Workmatik.metaRows('Workmatik AI Strategy', 'strategy', '1.0.0', [['Next measure number', S.next.measure], ['Next own row number', S.next.row], ['Next own column number', S.next.col], ['Note', 'Measure IDs (M01, M02...) are never reused. Other Workmatik tools match on these IDs.']]), [26, 90]]
     ];
@@ -209,13 +222,14 @@
   }
   function kvOf(ws) { var o = {}; if (ws) XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).forEach(function (r) { if (r[0] !== '' && r[0] !== 'Field') o[String(r[0])] = r[1]; }); return o; }
   function num(id, prefix) { var m = new RegExp('^' + prefix + '(\\d+)$').exec(String(id)); return m ? parseInt(m[1], 10) : 0; }
+  function archOf(r) { var a = String(r['Archetype'] || '').trim().toUpperCase(); return WorkmatikArchetypes.byId(a) ? a : ''; }
   function parseFile(buf) {
     var wb = XLSX.read(buf, { type: 'array' }), W = wb.Sheets;
     if (!W['Measures'] || !W['Rows'] || !W['Columns']) throw new Error('not a strategy file');
     var j = function (n) { return XLSX.utils.sheet_to_json(W[n], { defval: '' }); };
     var out = fresh(); out.rows = []; out.cols = [];
-    j('Rows').forEach(function (r) { if (String(r['ID']).trim()) out.rows.push({ id: String(r['ID']).trim(), label: String(r['Label']), source: String(r['Source']) === 'own' ? 'own' : 'starter' }); });
-    j('Columns').forEach(function (r) { if (String(r['ID']).trim()) out.cols.push({ id: String(r['ID']).trim(), label: String(r['Label']), source: String(r['Source']) === 'own' ? 'own' : 'starter' }); });
+    j('Rows').forEach(function (r) { if (String(r['ID']).trim()) out.rows.push({ id: String(r['ID']).trim(), label: String(r['Label']), source: String(r['Source']) === 'own' ? 'own' : 'starter', arch: archOf(r) }); });
+    j('Columns').forEach(function (r) { if (String(r['ID']).trim()) out.cols.push({ id: String(r['ID']).trim(), label: String(r['Label']), source: String(r['Source']) === 'own' ? 'own' : 'starter', arch: archOf(r) }); });
     j('Measures').forEach(function (r) {
       var id = String(r['Measure ID']).trim(); if (!id) return;
       var rk = parseInt(r['Rank'], 10);
