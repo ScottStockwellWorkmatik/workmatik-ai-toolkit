@@ -271,12 +271,12 @@
 
 
   function renderModel(host, C) {
-    var AR = window.WorkmatikArchetypes, SM = window.WorkmatikStrategy; if (!AR || !SM || !SM.ranked().length) return;
+    var AR = window.WorkmatikArchetypes, SM = window.WorkmatikStrategy; if (!AR || !SM || !SM.ranked().length) return null;
     var capScores = F.capability ? F.capability.scores : null, oos = F.capability ? F.capability.oos : null, dom = null;
     if (C.domains) { dom = {}; C.domains.forEach(function (d) { dom[d.d.id] = d.avg; }); }
     var g = AR.gapLevels(capScores, oos, dom), ans = window.WorkmatikOrganisation ? window.WorkmatikOrganisation.answers() : {}, rec = AR.recommend(SM.state(), g.levels, ans);
     var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank). Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
-    if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Give at least one measure a priority on the Strategy tab.')); host.appendChild(sec); return; }
+    if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Give at least one measure a priority on the Strategy tab.')); host.appendChild(sec); return null; }
     var b = rec.best;
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so the case for each is close. Both are worth testing, and the choice is yours.'));
@@ -299,6 +299,7 @@
     if (na.length) sec.appendChild(el('p', 'hint', 'Not assessed, so no gap counted: ' + na.map(function (k) { return AR.gapAreas.filter(function (a) { return a.id === k; })[0].name; }).join('; ') + '. Load the AI Capability Assessment and AI Skills Assessment files to test these.'));
     if (rec.ignored.length) sec.appendChild(el('p', 'hint', 'Ignored, no best-fit model chosen: ' + rec.ignored.join('; ') + '.'));
     host.appendChild(sec);
+    return rec;
   }
 
   // Shape from the roles file, when every role in it has a level and an FTE. Returns null otherwise.
@@ -378,6 +379,32 @@
     host.appendChild(sec);
   }
 
+  // What moves first: workflows in order of the strategy priority they serve, then readiness, then score, with the people and model gaps each one touches.
+  function renderMovesFirst(host, C, rec) {
+    if (!F.workflow || !C.workflows.length) return;
+    var AR = window.WorkmatikArchetypes, meta = F.roles ? (F.roles.meta || {}) : {};
+    var order = {}; WAVES.forEach(function (w, i) { order[w[0]] = i; });
+    var label = {}; WAVES.forEach(function (w) { label[w[0]] = w[1]; });
+    var rank = function (x) { return (C.strat && C.strat.wfRank[x.w.id]) || 99; };
+    var list = C.workflows.slice().sort(function (a, b) { return rank(a) - rank(b) || order[a.wave] - order[b.wave] || b.w.priority - a.w.priority; });
+    var gapCaps = {};   // capability id -> gap area name, for the gaps that count against the recommended model
+    if (rec && rec.best && AR) rec.best.gaps.forEach(function (g) { ((AR.gapSources[g.id] || {}).caps || []).forEach(function (id) { gapCaps[id] = g.name; }); });
+    (rec ? rec.common : []).forEach(function (g) { ((AR.gapSources[g.id] || {}).caps || []).forEach(function (id) { gapCaps[id] = g.name; }); });
+    var rows = list.map(function (x, i) {
+      var roles = x.w.roles || [], modes = {}, junior = [], gaps = {};
+      roles.forEach(function (r) { var m = meta[r]; if (m && m.mode) modes[m.mode] = 1; if (m && m.level === 'Junior practitioners') junior.push(r); });
+      x.blockers.forEach(function (b) { if (gapCaps[b.id]) gaps[gapCaps[b.id]] = 1; });
+      var r = rank(x);
+      return [i + 1, x.w.name, r === 99 ? 'Not linked' : r, label[x.wave], roles.join('; '), Object.keys(modes).join(', '), junior.join('; '), Object.keys(gaps).join('; ')];
+    });
+    var hasMeta = Object.keys(meta).length > 0, heads = ['Order', 'Workflow', 'Priority', 'When', 'Roles'], widths = [6, 22, 9, 15, 22];
+    if (hasMeta) { heads.push('Work modes needed', 'Junior roles touched'); widths.push(12, 14); }
+    heads.push('Model gap it touches'); widths.push(100 - widths.reduce(function (a, b) { return a + b; }, 0));
+    var sec = section('What moves first', 'Workflows in order of the strategy priority they serve (the highest rank wins where a workflow serves several), then readiness, then priority score. Work modes describe the type of person the roles usually need. Junior roles are flagged because the work AI takes first is often the work juniors learn on: plan how those people will build experience. The last column shows where the workflow depends on a capability the recommended model also needs.');
+    sec.appendChild(table(heads, rows.map(function (r) { var out = r.slice(0, 5); if (hasMeta) out.push(r[5], r[6]); out.push(r[7]); return out; }), [0], widths));
+    host.appendChild(sec);
+  }
+
   function renderRoadmap() {
     var host = $('roadmapBody'); host.textContent = '';
     var items = loadedItems(), hasStrat = !!(window.WorkmatikStrategy && window.WorkmatikStrategy.ranked().length); $('roadmapEmpty').hidden = items.length > 0 || hasStrat; host.hidden = !(items.length || hasStrat); if (!items.length && !hasStrat) return;
@@ -393,7 +420,8 @@
     host.appendChild(cards);
     C.warnings.forEach(function (w) { var b = el('div', 'flagbox'); b.appendChild(el('strong', null, 'Check. ')); b.appendChild(document.createTextNode(w)); host.appendChild(b); });
 
-    renderModel(host, C);
+    var rec = renderModel(host, C);
+    renderMovesFirst(host, C, rec);
     renderRolesNeeded(host, C);
     renderShape(host);
     if (C.strat) {
