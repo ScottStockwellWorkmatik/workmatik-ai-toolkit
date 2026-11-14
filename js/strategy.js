@@ -330,6 +330,25 @@
     host.appendChild(sec);
   }
 
+  // Roles needed to deliver the strategy, and within each role how much of the work is human only, augmented or automated.
+  function rolesNeeded(C) {
+    var split = {}; if (F.roles) F.roles.rows.forEach(function (r) { var x = split[r.role] = split[r.role] || { n: 0, ho: 0, au: 0, fa: 0 }; x.n++; if (r.cls === 'Full automation') x.fa++; else if (r.cls === 'Augmentation') x.au++; else x.ho++; });
+    var best = {}, linked = false;
+    if (C.strat && C.strat.hasWf) C.strat.items.forEach(function (i) { Object.keys(i.roles).forEach(function (r) { linked = true; best[r] = Math.min(best[r] || 99, i.m.rank); }); });
+    if (!linked) { Object.keys(split).forEach(function (r) { best[r] = 0; }); }
+    return Object.keys(best).map(function (r) { var x = split[r]; return { role: r, rank: best[r], n: x ? x.n : 0, ho: x ? x.ho / x.n : null, au: x ? x.au / x.n : null, fa: x ? x.fa / x.n : null }; })
+      .sort(function (a, b) { return (a.rank || 99) - (b.rank || 99) || (a.role < b.role ? -1 : 1); });
+  }
+  function renderRolesNeeded(host, C) {
+    var rows = rolesNeeded(C); if (!rows.length) return;
+    var pct = function (v) { return v == null ? '' : Math.round(v * 100) + '%'; };
+    var linked = C.strat && C.strat.hasWf && rows.some(function (r) { return r.rank; });
+    var sec = section('Roles needed to deliver the strategy', linked ? 'The roles in the workflows that support your priorities, in priority order. For each role, the share of its activities that are human only, augmented by AI or fully automated, from the AI Roles Assessment.' : 'Load the AI Workflow Assessment with your strategy file to see which roles each priority needs. Until then this lists every role in the AI Roles Assessment.');
+    if (!F.roles) sec.appendChild(el('p', 'hint', 'Load the AI Roles Assessment file to see the human only, augmented and automated split for each role.'));
+    sec.appendChild(table(['Priority', 'Role', 'Activities', 'Human only', 'Augmented', 'Automated'], rows.map(function (r) { return [r.rank || '', r.role, r.n || '', pct(r.ho), pct(r.au), pct(r.fa)]; }), [0, 2, 3, 4, 5], [10, 34, 12, 14, 15, 15]));
+    host.appendChild(sec);
+  }
+
   function renderRoadmap() {
     var host = $('roadmapBody'); host.textContent = '';
     var items = loadedItems(), hasStrat = !!(window.WorkmatikStrategy && window.WorkmatikStrategy.ranked().length); $('roadmapEmpty').hidden = items.length > 0 || hasStrat; host.hidden = !(items.length || hasStrat); if (!items.length && !hasStrat) return;
@@ -346,6 +365,7 @@
     C.warnings.forEach(function (w) { var b = el('div', 'flagbox'); b.appendChild(el('strong', null, 'Check. ')); b.appendChild(document.createTextNode(w)); host.appendChild(b); });
 
     renderModel(host, C);
+    renderRolesNeeded(host, C);
     renderShape(host);
     if (C.strat) {
       var P = C.strat, sp = section('Priorities and what supports them', 'From the Strategy tab. Each tracked priority is traced to the workflows you tagged to it, then to the capabilities, skill domains and roles those workflows depend on.');
