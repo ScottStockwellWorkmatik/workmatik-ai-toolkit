@@ -62,8 +62,8 @@ main { padding-top: 24px; padding-bottom: 48px; }
 /* Buttons and inputs */
 .btn { font: inherit; font-weight: 600; display: inline-block; padding: 9px 18px; border-radius: 8px; border: 2px solid var(--navy); background: var(--white); color: var(--navy); cursor: pointer; }
 .btn:hover { background: var(--pale); }
-.btn.primary { background: var(--orange); border-color: var(--orange); color: var(--ink); }
-.btn.primary:hover { background: var(--orange-dark); border-color: var(--orange-dark); color: var(--white); }
+.btn.primary { background: #C8431A; border-color: #C8431A; color: #fff; }
+.btn.primary:hover { background: #9E3010; border-color: #9E3010; color: #fff; }
 input[type="text"], select { font: inherit; padding: 8px 10px; border: 1px solid #8A949C; border-radius: 8px; background: var(--white); color: var(--ink); width: 100%; }
 label { display: block; font-weight: 600; font-size: 13px; color: var(--navy); }
 label input, label select { margin-top: 4px; font-weight: 400; }
