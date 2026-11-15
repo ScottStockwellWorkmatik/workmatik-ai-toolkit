@@ -118,15 +118,37 @@
     { f: 'deal_complexity', a: ['Transactional'], m: 'E', p: 0.5, why: 'Simple sales suit a lean team (weak evidence)' }
   ];
   var CONTEXT_FIELDS = ['compliance_burden', 'ai_maturity_stage', 'breadth', 'data_readiness', 'skill_shape', 'deal_complexity', 'headcount_band', 'org_axis', 'demand_variability'];
+  // Workflow and role signals. Computed from the loaded AI Workflow Assessment and AI Roles Assessment files (see signals() in strategy.js).
+  // Each rule: source (wf or roles), the measure, the threshold at or above which it counts, the model that gains the points and the reason shown.
+  // No rule favours B or D yet: nothing in these two files separates them from the others. A signal from a file that is not loaded counts as zero ("not assessed"), never as evidence against a model.
+  // Working hypotheses from the research brief and the author's judgement, editable on the Rules tab.
+  var SIGNALS = [
+    { id: 'wf_risk', src: 'wf', k: 'riskShare', pct: true, thr: 0.5, m: 'A', p: 1, label: 'Share of selected workflows that are high risk (risk 3.5 or more, or a high EU AI Act tier)', why: 'Many high-risk workflows favour central control' },
+    { id: 'wf_cross', src: 'wf', k: 'avgRoles', pct: false, thr: 2, m: 'C', p: 1, label: 'Average roles involved per selected workflow', why: 'Workflows that cross several roles suit pods that own the whole flow' },
+    { id: 'wf_ready', src: 'wf', k: 'readyShare', pct: true, thr: 0.6, m: 'E', p: 0.5, label: 'Share of selected workflows with high feasibility (weak evidence)', why: 'Repeatable, feasible workflows suit a lean team with agents' },
+    { id: 'rl_auto', src: 'roles', k: 'autoShare', pct: true, thr: 0.25, m: 'E', p: 1, label: 'Share of selected activities classed as full automation', why: 'A large automated share suits people who direct agents' },
+    { id: 'rl_orch', src: 'roles', k: 'orchShare', pct: true, thr: 0.3, m: 'E', p: 1, label: 'Share of roles in Orchestrator or Builder mode', why: 'Many Orchestrator and Builder roles suit an orchestrator-led team' },
+    { id: 'rl_gov', src: 'roles', k: 'govShare', pct: true, thr: 0.1, m: 'A', p: 1, label: 'Share of roles in Governor mode', why: 'Many Governor roles point to central review and control' }
+  ];
+  // sig = { wf: {...} or null, roles: {...} or null }. Returns points and reasons per model.
+  function signalPoints(sig) {
+    var pts = {}, why = {}; LIST.forEach(function (a) { pts[a.id] = 0; why[a.id] = []; });
+    SIGNALS.forEach(function (r) {
+      var s = sig && sig[r.src], v = s ? s[r.k] : null;
+      if (v == null || isNaN(v) || v < r.thr) return;
+      pts[r.m] += r.p; why[r.m].push({ id: r.id, value: v, pct: r.pct, points: r.p, text: r.why, src: r.src });
+    });
+    return { pts: pts, why: why };
+  }
   function contextPoints(answers) {
     var pts = {}, why = {}; LIST.forEach(function (a) { pts[a.id] = 0; why[a.id] = []; });
     CONTEXT.forEach(function (r) { var v = answers && answers[r.f]; if (v && r.a.indexOf(v) >= 0) { pts[r.m] += r.p; why[r.m].push({ field: r.f, answer: v, points: r.p, text: r.why }); } });
     return { pts: pts, why: why };
   }
-  // Recommendation: simple points from the strategy grid, less the gap penalty. Organisation context signals are added in the next step.
+  // Recommendation: points from the strategy grid, Organisation context and workflow and role signals, less the gap penalty.
   var MARGIN = 2; // a runner-up is shown when its score is within this many points of the best
   // state = WorkmatikStrategy.state(); measures with rank >= 1 count, with no limit. Added rows or columns count only when the client chose a model for them.
-  function recommend(state, levels, answers, noFlip) {
+  function recommend(state, levels, answers, noFlip, sig) {
     var pts = {}, why = {}, ignored = [];
     LIST.forEach(function (a) { pts[a.id] = 0; why[a.id] = []; });
     function rowOf(id) { return state.rows.filter(function (r) { return r.id === id; })[0] || {}; }
@@ -138,7 +160,7 @@
       var w = rankWeight(m.rank), label = (r.label || '') + ' · ' + (c.label || '');
       [POINTS.first, POINTS.second].forEach(function (p, i) { var id = pick[i]; if (!id) return; var v = p * w; pts[id] += v; why[id].push({ cell: label, rank: m.rank, points: v }); });
     });
-    var cx = contextPoints(answers);
+    var cx = contextPoints(answers), sp = signalPoints(sig);
     // A gap that every model depends on is a foundation to fix whichever model is chosen. Only the extra weight a model puts on it counts against that model,
     // so "not ready yet" marks gaps that differ between models.
     var common = [], base = {};
@@ -148,7 +170,7 @@
       if (ws.some(function (x) { return x <= 0; })) return;
       var b = Math.min.apply(null, ws) * lv; base[g.id] = b; common.push({ id: g.id, name: g.name, kind: g.kind, level: lv, points: b });
     });
-    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels, base), st = pts[a.id], tot = st + cx.pts[a.id]; return { id: a.id, name: a.name, strategy: st, context: cx.pts[a.id], points: tot, penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: tot - g.penalty, why: why[a.id], contextWhy: cx.why[a.id] }; });
+    var rows = LIST.map(function (a) { var g = gapPenalty(a.id, levels, base), st = pts[a.id], tot = st + cx.pts[a.id] + sp.pts[a.id]; return { id: a.id, name: a.name, strategy: st, context: cx.pts[a.id], signals: sp.pts[a.id], signalWhy: sp.why[a.id], points: tot, penalty: g.penalty, gaps: g.gaps, notReady: g.notReady, score: tot - g.penalty, why: why[a.id], contextWhy: cx.why[a.id] }; });
     rows.sort(function (x, y) { return y.score - x.score; });
     var best = rows[0], runner = rows[1] && best.score - rows[1].score <= MARGIN && rows[1].points > 0 ? rows[1] : null;
     var rec = { common: common, rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
@@ -164,7 +186,7 @@
         Object.keys(opts).forEach(function (o) {
           if (answers[f] === o) return;
           var alt = {}; Object.keys(answers).forEach(function (k) { alt[k] = answers[k]; }); alt[f] = o;
-          var r2 = recommend(state, levels, alt, true);
+          var r2 = recommend(state, levels, alt, true, sig);
           if (r2.best && r2.best.id !== rec.best.id) rec.flips.push({ field: f, from: answers[f] || 'not answered', to: o, model: r2.best.name });
         });
       });
@@ -188,11 +210,13 @@
     return 'Other';
   }
   // Editable rules (Rules tab). Defaults are copied once so they can be restored.
-  var DEFAULTS = { weights: JSON.parse(JSON.stringify(GAP_WEIGHTS)), points: CONTEXT.map(function (r) { return r.p; }), notReady: NOT_READY, margin: MARGIN, augShare: AUG_SHARE };
+  var DEFAULTS = { weights: JSON.parse(JSON.stringify(GAP_WEIGHTS)), points: CONTEXT.map(function (r) { return r.p; }), sigP: SIGNALS.map(function (r) { return r.p; }), sigT: SIGNALS.map(function (r) { return r.thr; }), notReady: NOT_READY, margin: MARGIN, augShare: AUG_SHARE };
   function setRule(kind, a, b, v) {
     v = parseFloat(v); if (isNaN(v) || v < 0) return;
     if (kind === 'weight') GAP_WEIGHTS[a][b] = v;
     else if (kind === 'context') CONTEXT[a].p = v;
+    else if (kind === 'signal') SIGNALS[a].p = v;
+    else if (kind === 'signalThr') SIGNALS[a].thr = v;
     else if (kind === 'notReady') { NOT_READY = v; api.notReady = v; }
     else if (kind === 'margin') { MARGIN = v; api.margin = v; }
     else if (kind === 'augShare') { AUG_SHARE = Math.min(1, v); api.augShare = AUG_SHARE; }
@@ -200,9 +224,10 @@
   function resetRules() {
     Object.keys(DEFAULTS.weights).forEach(function (m) { Object.keys(DEFAULTS.weights[m]).forEach(function (g) { GAP_WEIGHTS[m][g] = DEFAULTS.weights[m][g]; }); });
     CONTEXT.forEach(function (r, i) { r.p = DEFAULTS.points[i]; });
+    SIGNALS.forEach(function (r, i) { r.p = DEFAULTS.sigP[i]; r.thr = DEFAULTS.sigT[i]; });
     NOT_READY = DEFAULTS.notReady; MARGIN = DEFAULTS.margin; AUG_SHARE = DEFAULTS.augShare;
     api.notReady = NOT_READY; api.margin = MARGIN; api.augShare = AUG_SHARE;
   }
   function byId(id) { return LIST.filter(function (a) { return a.id === id; })[0]; }
-  var api = window.WorkmatikArchetypes = { setRule: setRule, resetRules: resetRules, list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, augShare: AUG_SHARE, classifyShape: classifyShape, context: CONTEXT };
+  var api = window.WorkmatikArchetypes = { setRule: setRule, resetRules: resetRules, list: LIST, cells: CELLS, notes: NOTES, points: POINTS, rankWeight: rankWeight, byId: byId, modes: MODES, modelModes: MODEL_MODES, modeLabel: MODE_LABEL, gapAreas: GAP_AREAS, gapWeights: GAP_WEIGHTS, notReady: NOT_READY, gapPenalty: gapPenalty, gapSources: GAP_SOURCES, gapCuts: GAP_CUTS, gapLevels: gapLevels, recommend: recommend, margin: MARGIN, levels: LEVELS, augShare: AUG_SHARE, classifyShape: classifyShape, context: CONTEXT, signalRules: SIGNALS, signalPoints: signalPoints };
 })();

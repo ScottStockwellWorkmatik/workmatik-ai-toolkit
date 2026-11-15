@@ -273,23 +273,42 @@
   var WAVES = [['now', 'Start now'], ['next', 'Start next'], ['quick', 'Quick wins'], ['fix', 'Fix first, then build'], ['hold', 'Hold'], ['hold-prohibited', 'Do not proceed']];
 
 
+  // Workflow and role signals for the model score. A signal is only produced when its file is loaded.
+  function signals() {
+    var out = { wf: null, roles: null }, w = F.workflow, r = F.roles;
+    if (w && w.rows && w.rows.length) {
+      var n = w.rows.length, risky = 0, ready = 0, rolesSum = 0;
+      w.rows.forEach(function (x) { if (x.r >= 3.5 || x.tier === 'high') risky++; if (x.quad === 'start' || x.quad === 'quick') ready++; rolesSum += (x.roles || []).length; });
+      out.wf = { n: n, riskShare: risky / n, readyShare: ready / n, avgRoles: rolesSum / n };
+    }
+    if (r && r.rows && r.rows.length) {
+      var nAct = r.rows.length, auto = r.rows.filter(function (x) { return x.cls === 'Full automation'; }).length, names = {}, meta = r.meta || {};
+      r.rows.forEach(function (x) { names[x.role] = 1; });
+      var roleList = Object.keys(names), modeOf = function (nm) { return meta[nm] && meta[nm].mode ? String(meta[nm].mode) : ''; };
+      var withMode = roleList.filter(function (nm) { return modeOf(nm); }), cnt = function (re) { return withMode.filter(function (nm) { return re.test(modeOf(nm)); }).length; };
+      out.roles = { n: nAct, roles: roleList.length, autoShare: auto / nAct };
+      if (withMode.length) { out.roles.orchShare = (cnt(/^(Orchestrator|Builder)/i)) / withMode.length; out.roles.govShare = cnt(/^Governor/i) / withMode.length; }
+    }
+    return out;
+  }
   function renderModel(host, C) {
     var AR = window.WorkmatikArchetypes, SM = window.WorkmatikStrategy; if (!AR || !SM || !SM.ranked().length) return null;
     var capScores = F.capability ? F.capability.scores : null, oos = F.capability ? F.capability.oos : null, dom = null;
     if (C.domains) { dom = {}; C.domains.forEach(function (d) { dom[d.d.id] = d.avg; }); }
-    var g = AR.gapLevels(capScores, oos, dom), ans = window.WorkmatikOrganisation ? window.WorkmatikOrganisation.answers() : {}, rec = AR.recommend(SM.state(), g.levels, ans);
-    var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank). Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
+    var g = AR.gapLevels(capScores, oos, dom), ans = window.WorkmatikOrganisation ? window.WorkmatikOrganisation.answers() : {}, sig = signals(), rec = AR.recommend(SM.state(), g.levels, ans, false, sig);
+    var sec = section('Recommended starting model, to test with your team', 'Points come from your ranked strategy priorities (first choice 2, second choice 1, divided by rank), your Organisation answers, and signals in your Workflow and Roles files. Capability and skills gaps lower a model\u2019s score and are shown as gaps to close. They never remove a model. Weights are working hypotheses.');
     if (!rec.best) { sec.appendChild(el('p', null, 'No ranked priority points to a model yet. Give at least one measure a priority on the Strategy tab.')); host.appendChild(sec); return null; }
     var b = rec.best;
     sec.appendChild(el('h3', null, 'Best fit: ' + b.name + (b.notReady ? ' (not ready yet)' : '')));
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so the case for each is close. Both are worth testing, and the choice is yours.'));
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
-    sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
+    sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Workflow and role points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), round1(r.signals), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4, 5], [20, 9, 9, 11, 9, 8, 34]));
     renderShape(sec);
     if (rec.common.length) { sec.appendChild(el('h3', null, 'Gaps that affect every model')); sec.appendChild(el('p', null, 'Fix these whichever model you choose: ' + rec.common.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') + '. They are left out of the model scores, apart from the extra weight a model puts on them.')); }
     sec.appendChild(el('h3', null, 'Why ' + b.name));
     var ul = el('ul'); b.why.forEach(function (w) { ul.appendChild(el('li', null, 'Strategy: ' + w.cell + ' (priority ' + w.rank + ') adds ' + round1(w.points) + '.')); });
     b.contextWhy.forEach(function (w) { ul.appendChild(el('li', null, 'Organisation: ' + w.text + ' (' + w.answer + ') adds ' + round1(w.points) + '.')); });
+    b.signalWhy.forEach(function (w) { ul.appendChild(el('li', null, (w.src === 'wf' ? 'Workflows: ' : 'Roles: ') + w.text + ' (' + (w.pct ? Math.round(w.value * 100) + '%' : round1(w.value)) + ') adds ' + round1(w.points) + '.')); });
     sec.appendChild(ul);
     sec.appendChild(el('h3', null, 'Gaps against ' + b.name));
     if (b.gaps.length) { var gl = el('ul'); b.gaps.forEach(function (w) { gl.appendChild(el('li', null, w.name + (w.level === 2 ? ' (large)' : ' (partial)') + ' lowers the score by ' + round1(w.points) + '.')); }); sec.appendChild(gl); }
@@ -297,6 +316,8 @@
     sec.appendChild(el('h3', null, 'What would change the answer'));
     if (rec.flips.length) { var fl = el('ul'); rec.flips.slice(0, 5).forEach(function (f) { fl.appendChild(el('li', null, 'If ' + f.field.replace(/_/g, ' ') + ' were \u201c' + f.to + '\u201d (now ' + f.from + '), the best fit would be ' + f.model + '.')); }); sec.appendChild(fl); }
     else sec.appendChild(el('p', null, 'No single Organisation answer would change the best fit.'));
+    var miss = []; if (!sig.wf) miss.push('AI Workflow Assessment'); if (!sig.roles) miss.push('AI Roles Assessment');
+    if (miss.length) sec.appendChild(el('p', 'hint', 'Workflow and role signals not counted: load the ' + miss.join(' and ') + ' file' + (miss.length > 1 ? 's' : '') + ' to add them. Missing files add no points to any model.'));
     var nOrg = ['compliance_burden', 'ai_maturity_stage', 'breadth', 'data_readiness', 'headcount_band', 'demand_variability'].filter(function (k) { return !ans[k]; });
     if (nOrg.length) sec.appendChild(el('p', 'hint', 'Not yet answered on the Organisation tab: ' + nOrg.map(function (k) { return k.replace(/_/g, ' '); }).join(', ') + '. Answering these will sharpen the recommendation.'));
     var na = Object.keys(g.assessed).filter(function (k) { return !g.assessed[k]; });
@@ -601,6 +622,15 @@
       var td = el('td'); td.appendChild(num(r.p, 0, 5, 0.5, function (v) { A.setRule('context', i, null, v); }, r.m + ' ' + r.f)); tr.appendChild(td); tr.appendChild(el('td', null, r.why)); tb3.appendChild(tr);
     });
     c.appendChild(tb3);
+    var st = $('signalTable'); if (st) { st.textContent = '';
+      var h4 = el('tr'); ['Model', 'Signal', 'Counts when at or above', 'Points', 'Why'].forEach(function (x) { h4.appendChild(el('th', null, x)); });
+      var th4 = el('thead'); th4.appendChild(h4); st.appendChild(th4); var tb4 = el('tbody');
+      A.signalRules.forEach(function (r, i) {
+        var tr = el('tr'); tr.appendChild(el('td', null, r.m)); tr.appendChild(el('td', null, (r.src === 'wf' ? 'Workflows: ' : 'Roles: ') + r.label));
+        var t1 = el('td'); t1.appendChild(num(r.pct ? Math.round(r.thr * 100) : r.thr, 0, r.pct ? 100 : 20, r.pct ? 5 : 0.5, function (v) { A.setRule('signalThr', i, null, r.pct ? parseFloat(v) / 100 : v); }, r.id + ' threshold')); if (r.pct) t1.appendChild(document.createTextNode(' %')); tr.appendChild(t1);
+        var t2 = el('td'); t2.appendChild(num(r.p, 0, 5, 0.5, function (v) { A.setRule('signal', i, null, v); }, r.id + ' points')); tr.appendChild(t2); tr.appendChild(el('td', null, r.why)); tb4.appendChild(tr);
+      });
+      st.appendChild(tb4); }
     $('btnResetModelRules').onclick = function () { A.resetRules(); renderModelRules(); changed(); };
   }
   function renderRules() {
