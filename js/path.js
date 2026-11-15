@@ -62,5 +62,16 @@
     document.getElementById('progressBar').style.width = (n / STEPS.length * 100) + '%';
   }
   load(); render();
+  // Named so the other tools can find this tab again without reloading it. Progress arrives in memory only.
+  try { window.name = 'workmatik-toolkit'; } catch (e) {}
+  window.__toolkitMarkDone = function (id) { done[id] = true; render(); };
+  try {
+    var ch = new BroadcastChannel('workmatik-progress');
+    ch.onmessage = function (e) {
+      var d = e.data || {};
+      if (d.type === 'done' && /^(strategy|organisation|workflow|roles|capability|skills|roadmap)$/.test(d.step)) window.__toolkitMarkDone(d.step);
+      if (d.type === 'goto' && window.__toolkitShowTab) window.__toolkitShowTab(d.tab || 'path');
+    };
+  } catch (e) { /* channel not available */ }
   document.getElementById('btnReset').addEventListener('click', function () { done = {}; save(); render(); });
 })();

@@ -108,7 +108,7 @@
     { f: 'skill_shape', a: ['T-shaped (specialist depth, broad range)', 'Mixed'], m: 'B', p: 0.5, why: 'Some AI skill at spoke level (weak evidence)' },
     { f: 'deal_complexity', a: ['Complex, many buyers and long cycle'], m: 'B', p: 0.5, why: 'Complex sales need local judgement (weak evidence)' },
     { f: 'data_readiness', a: ['High'], m: 'C', p: 1, why: 'Trusted data lets pods work on a shared platform' },
-    { f: 'headcount_band', a: ['51-200', 'Over 200'], m: 'C', p: 1, why: 'Enough scale to fund a platform team' },
+    { f: 'headcount_band', a: ['51-100', '101-200', 'Over 200'], m: 'C', p: 1, why: 'Enough scale to fund a platform team' },
     { f: 'org_axis', a: ['By segment or market', 'By outcome or value stream'], m: 'C', p: 1, why: 'Already organised around segments or outcomes that can be measured' },
     { f: 'demand_variability', a: ['Lumpy'], m: 'D', p: 1, why: 'Lumpy demand suits a fixed base with assembled crews' },
     { f: 'skill_shape', a: ['Mostly specialists', 'T-shaped (specialist depth, broad range)'], m: 'D', p: 0.5, why: 'Stable role vocabulary to assemble crews from (weak evidence)' },
@@ -154,7 +154,7 @@
     var rec = { common: common, rows: rows, best: best.points > 0 ? best : null, runnerUp: runner, ignored: ignored, margin: MARGIN };
     // Exploration unit: strategy needs new customers or channels as well as efficiency, the team can fund a separate unit, and never for E.
     var needsNew = state.measures.some(function (m) { return m.rank >= 1 && m.row === 'SR02'; });
-    var canFund = answers && (['51-200', 'Over 200'].indexOf(answers.headcount_band) >= 0 || (answers.exploration_unit && answers.exploration_unit !== 'No'));
+    var canFund = answers && (['51-100', '101-200', 'Over 200'].indexOf(answers.headcount_band) >= 0 || (answers.exploration_unit && answers.exploration_unit !== 'No'));
     rec.exploration = !!(rec.best && rec.best.id !== 'E' && needsNew && canFund);
     // What would change the answer: change one Organisation answer at a time and see whether the best fit moves.
     rec.flips = [];

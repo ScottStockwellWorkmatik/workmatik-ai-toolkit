@@ -66,8 +66,9 @@
   "group": "Structure",
   "q": "What is the usual unit of work?",
   "opts": [
+   "Human only",
    "Human team using AI tools",
-   "Individual plus AI",
+   "Individuals independently using AI",
    "Agents running workflows under human oversight"
   ],
   "low": false
@@ -104,6 +105,7 @@
    "Marketing lead",
    "CMO",
    "CEO or board",
+   "Centralised Governance Function",
    "Shared across functions"
   ],
   "low": false
@@ -264,7 +266,8 @@
   "opts": [
    "Under 10",
    "10-50",
-   "51-200",
+   "51-100",
+   "101-200",
    "Over 200"
   ],
   "low": false
@@ -345,13 +348,13 @@
     var AR = window.WorkmatikArchetypes;
     if (AR) {
       host.appendChild(el('h3', 'oq-group', 'Team shape by level'));
-      host.appendChild(el('p', 'hint', 'Full-time equivalents (FTE) at each level, today and in the model you are testing. The Roadmap draws the shape so you can see whether it is a pyramid, a diamond or something else. Enter whole or part numbers. The target is the number of people, not agents: the difference is the work agents take on.'));
-      var tb = el('table', 'rank-table'), hd = el('tr'); ['Level', 'FTE today', 'People in the target'].forEach(function (h) { hd.appendChild(el('th', null, h)); }); var th = el('thead'); th.appendChild(hd); tb.appendChild(th);
+      host.appendChild(el('p', 'hint', 'Full-time equivalents (FTE) at each level, today and in the model you are testing. The Roadmap draws the shape to help you visualise the change in team structure before and after your AI implementation. Enter whole or part numbers. Only enter your people numbers, agent numbers will be factored in later.'));
+      var tb = el('table', 'rank-table'), hd = el('tr'); ['Level', 'FTE today'].forEach(function (h) { hd.appendChild(el('th', null, h)); }); var th = el('thead'); th.appendChild(hd); tb.appendChild(th);
       var bd = el('tbody');
       AR.levels.slice().reverse().forEach(function (L) {
         var tr = el('tr'); tr.appendChild(el('td', null, L.name));
-        ['today', 'target'].forEach(function (k) {
-          var td = el('td'), inp = el('input'); inp.type = 'number'; inp.min = '0'; inp.step = '0.5'; inp.id = 'shape-' + k + '-' + L.id; inp.setAttribute('aria-label', L.name + (k === 'today' ? ' FTE today' : ' people in the target'));
+        ['today'].forEach(function (k) {
+          var td = el('td'), inp = el('input'); inp.type = 'number'; inp.min = '0'; inp.step = '0.5'; inp.id = 'shape-' + k + '-' + L.id; inp.setAttribute('aria-label', L.name + ' FTE today');
           if (SHAPE[k][L.id] != null) inp.value = SHAPE[k][L.id];
           inp.addEventListener('input', function () { var n = parseFloat(inp.value); if (isNaN(n) || n < 0) delete SHAPE[k][L.id]; else SHAPE[k][L.id] = n; mark(); });
           td.appendChild(inp); tr.appendChild(td);
@@ -369,17 +372,18 @@
     var host = $('orgNext'); if (!host) return; host.textContent = ''; host.hidden = false;
     host.appendChild(el('h3', null, 'Organisation done? Next, choose the work that delivers your strategy'));
     host.appendChild(el('p', 'hint', dirty
-      ? 'Download your organisation file first so you keep your answers. Then open the AI Workflow Assessment.'
-      : 'Your organisation file is saved. Next is the AI Workflow Assessment, where you choose the workflows that deliver your strategy.'));
+      ? 'Save your organisation file first so you keep your answers. Then open the AI Workflow Assessment, where you choose the workflows that deliver your strategy.'
+      : 'Save your organisation file if you have not already: it is saved now. Next is the AI Workflow Assessment, where you choose the workflows that deliver your strategy.'));
     if (askSave && dirty) {
       var warn = el('div', 'flagbox'); warn.appendChild(el('strong', null, 'Your organisation file is not saved yet. ')); warn.appendChild(document.createTextNode('Nothing is kept in the browser, so changes since your last download are lost if you close this tab. Download the file now, then continue.'));
       var wa = el('div', 'actions'); var d2 = el('button', 'btn primary', 'Download organisation file'); d2.type = 'button'; d2.addEventListener('click', download);
       var sk = el('button', 'lnk', 'Continue without saving'); sk.type = 'button'; sk.addEventListener('click', openWorkflow); wa.appendChild(d2); wa.appendChild(sk); warn.appendChild(wa); host.appendChild(warn);
     }
-    var act = el('div', 'actions'); var go = el('button', 'btn primary', 'Start the AI Workflow Assessment'); go.type = 'button';
-    go.addEventListener('click', function () { if (dirty && (answered() || Object.keys(SHAPE.today).length || Object.keys(SHAPE.target).length)) { askSave = true; renderNext(); } else openWorkflow(); });
+    var act = el('div', 'actions'); var go = el('button', 'btn', 'Start the AI Workflow Assessment'); go.type = 'button';
+    go.addEventListener('click', function () { if (dirty && (answered() || Object.keys(SHAPE.today).length)) { askSave = true; renderNext(); } else openWorkflow(); });
     var back = el('button', 'btn', 'Back to the Path'); back.type = 'button'; back.addEventListener('click', function () { if (window.__toolkitShowTab) window.__toolkitShowTab('path'); });
-    act.appendChild(go); act.appendChild(back); host.appendChild(act);
+    var dlb = el('button', 'btn primary', 'Download Organisation File'); dlb.type = 'button'; dlb.addEventListener('click', download);
+    act.appendChild(dlb); act.appendChild(go); act.appendChild(back); host.appendChild(act);
     host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your answers. Keep this tab open until you have downloaded the file.'));
   }
 
@@ -388,10 +392,10 @@
     var rows = [['Field ID', 'Group', 'Question', 'Answer', 'Answer source']];
     FIELDS.forEach(function (f) { rows.push([f.id, f.group, f.q, A[f.id] || '', A[f.id] ? ((OWN[f.id] || []).indexOf(A[f.id]) >= 0 ? 'own' : 'starter') : '']); });
     var own = [['Field ID', 'Own option']]; FIELDS.forEach(function (f) { (OWN[f.id] || []).forEach(function (o) { own.push([f.id, o]); }); });
-    var shp = [['Level ID', 'Level', 'FTE today', 'People in the target']]; (window.WorkmatikArchetypes ? window.WorkmatikArchetypes.levels : []).forEach(function (L) { shp.push([L.id, L.name, SHAPE.today[L.id] != null ? SHAPE.today[L.id] : '', SHAPE.target[L.id] != null ? SHAPE.target[L.id] : '']); });
+    var shp = [['Level ID', 'Level', 'FTE today']]; (window.WorkmatikArchetypes ? window.WorkmatikArchetypes.levels : []).forEach(function (L) { shp.push([L.id, L.name, SHAPE.today[L.id] != null ? SHAPE.today[L.id] : '']); });
     return [
       ['Organisation', rows, [24, 16, 60, 44, 14]],
-      ['Team shape', shp, [12, 30, 14, 20]],
+      ['Team shape', shp, [12, 30, 14]],
       ['Own options', own, [24, 50]],
       ['Workmatik data', Workmatik.metaRows('Workmatik AI Organisation', 'organisation', '1.0.0', [['Fields answered', answered() + ' of ' + FIELDS.length], ['Note', 'An as-is snapshot of how marketing is organised today. Field IDs are stable. Other Workmatik tools match on these IDs.']]), [26, 90]]
     ];
@@ -399,7 +403,7 @@
   function download() {
     if (!Workmatik.requireOrg()) return;
     var sh = sheets(), fname = Workmatik.fileName('organisation');
-    function done() { dirty = false; askSave = false; renderNext(); }
+    function done() { dirty = false; askSave = false; renderNext(); if (window.__toolkitMarkDone) window.__toolkitMarkDone('organisation'); }
     function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); done(); }
     if (typeof ExcelJS === 'undefined') { fallback(); return; }
     var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Organisation';
@@ -418,6 +422,8 @@
   function isOrganisationBook(wb) {
     var kv = kvOf(wb.Sheets['Workmatik data']); return String(kv['Tool key'] || '') === 'organisation' && !!wb.Sheets['Organisation'];
   }
+  // Wording used by earlier versions of the questions, so files saved then still load against the current options.
+  var LEGACY = { working_unit: { 'Individual plus AI': 'Individuals independently using AI' }, headcount_band: { '51-200': '51-100' } };
   function parseFile(buf) {
     var wb = XLSX.read(buf, { type: 'array' }), W = wb.Sheets;
     if (!isOrganisationBook(wb)) throw new Error('not an organisation file');
@@ -425,11 +431,12 @@
     if (W['Own options']) XLSX.utils.sheet_to_json(W['Own options'], { defval: '' }).forEach(function (r) { var id = String(r['Field ID']).trim(), o = String(r['Own option']).trim(); if (fieldById(id) && o) (own[id] = own[id] || []).push(o); });
     XLSX.utils.sheet_to_json(W['Organisation'], { defval: '' }).forEach(function (r) {
       var id = String(r['Field ID']).trim(), f = fieldById(id), v = String(r['Answer']).trim(); if (!f || !v) return;
+      if (LEGACY[id] && LEGACY[id][v]) v = LEGACY[id][v];
       if (f.opts.indexOf(v) < 0 && (own[id] || []).indexOf(v) < 0) (own[id] = own[id] || []).push(v);   // keep an answer whose option is not in this version's list
       ans[id] = v;
     });
     var shape = { today: {}, target: {} };
-    if (W['Team shape']) XLSX.utils.sheet_to_json(W['Team shape'], { defval: '' }).forEach(function (r) { var id = String(r['Level ID']).trim(); [['today', 'FTE today'], ['target', 'People in the target']].forEach(function (k) { var n = parseFloat(r[k[1]]); if (!isNaN(n) && n >= 0) shape[k[0]][id] = n; }); });
+    if (W['Team shape']) XLSX.utils.sheet_to_json(W['Team shape'], { defval: '' }).forEach(function (r) { var id = String(r['Level ID']).trim(); [['today', 'FTE today']].forEach(function (k) { var n = parseFloat(r[k[1]]); if (!isNaN(n) && n >= 0) shape[k[0]][id] = n; }); });
     return { answers: ans, own: own, shape: shape, kv: kvOf(W['Workmatik data']) };
   }
   function importBuffer(buf, name, msgs) {
@@ -449,7 +456,7 @@
   }
 
   function init() {
-    window.addEventListener('beforeunload', function (e) { if (dirty && (answered() || Object.keys(SHAPE.today).length || Object.keys(SHAPE.target).length)) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', function (e) { if (dirty && (answered() || Object.keys(SHAPE.today).length)) { e.preventDefault(); e.returnValue = ''; } });
     render();
   }
   window.WorkmatikOrganisation = { answers: function () { return A; }, shape: function () { return SHAPE; }, own: function () { return OWN; }, fields: FIELDS, importBuffer: importBuffer, isOrganisationBook: isOrganisationBook, render: render };

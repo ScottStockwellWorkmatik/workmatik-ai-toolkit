@@ -92,19 +92,18 @@
     return c;
   }
 
-  var WF_URL = 'https://scottstockwellworkmatik.github.io/ai-workflow-assessment/';
-  var askSave = false;
-  function openWorkflow() { askSave = false; window.open(WF_URL, '_blank'); renderNext(); }
+    var askSave = false;
+  function openOrganisation() { askSave = false; if (window.__toolkitShowTab) window.__toolkitShowTab('organisation'); renderNext(); }
   function renderNext() {
     var host = $('strategyNext'); if (!host) return; host.textContent = '';
     var none = !ranked().length, unsaved = none || dirty;
     host.hidden = false;
-    host.appendChild(el('h3', null, 'Strategy done? Next, choose the work that delivers it'));
+    host.appendChild(el('h3', null, 'Strategy done? Next, record where you are today'));
     host.appendChild(el('p', 'hint', none
-      ? 'Give a priority number to the measures you want to track, then download your strategy file. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
+      ? 'Give a priority number to the measures you want to track, then download your strategy file. The Organisation step comes next, then the Workflow Assessment reads this file so you can tag each workflow to the priorities it supports.'
       : dirty
-        ? 'Download your strategy file first. The Workflow Assessment reads it so you can tag each workflow to the priorities it supports.'
-        : 'Your strategy file is saved. Load it in the Workflow Assessment (or drop it onto that page) to tag each workflow to the priorities it supports.'));
+        ? 'Download your strategy file first. The Workflow Assessment reads it later so you can tag each workflow to the priorities it supports.'
+        : 'Your strategy file is saved. Next is the Organisation Assessment. Keep the file: you will load it in the Workflow Assessment to tag each workflow to the priorities it supports.'));
     if (none && !askSave) {
       var need = el('div', 'flagbox'); need.appendChild(el('strong', null, 'Choose at least one priority. '));
       need.appendChild(document.createTextNode('Give a priority number to at least one measure in the grid. Your priorities decide which organisation model the Roadmap recommends, and the Workflow Assessment uses them to tag each workflow.')); host.appendChild(need);
@@ -113,23 +112,23 @@
       var warn = el('div', 'flagbox');
       if (none) {
         warn.appendChild(el('strong', null, 'You have not given any measure a priority yet. '));
-        warn.appendChild(document.createTextNode('Without a strategy file the Workflow Assessment cannot tag workflows to your priorities. Rank at least one measure above, download the file, then continue.'));
+        warn.appendChild(document.createTextNode('Without a strategy file the Workflow Assessment cannot tag workflows to your priorities later. Rank at least one measure above, download the file, then continue.'));
       } else {
         warn.appendChild(el('strong', null, 'Your strategy file is not saved yet. '));
         warn.appendChild(document.createTextNode('Nothing is kept in the browser, so changes since your last download are lost if you close this tab. Download the file now, then continue.'));
       }
       var wa = el('div', 'actions');
       var dl = el('button', 'btn primary', 'Download strategy file'); dl.type = 'button'; dl.addEventListener('click', download); if (none) dl.disabled = true;
-      var skip = el('button', 'lnk', 'Continue without saving'); skip.type = 'button'; skip.addEventListener('click', openWorkflow);
+      var skip = el('button', 'lnk', 'Continue without saving'); skip.type = 'button'; skip.addEventListener('click', openOrganisation);
       wa.appendChild(dl); wa.appendChild(skip); warn.appendChild(wa); host.appendChild(warn);
     }
     var act = el('div', 'actions');
-    var go = el('button', 'btn primary', 'Start the AI Workflow Assessment'); go.type = 'button';
-    go.addEventListener('click', function () { if (unsaved) { askSave = true; renderNext(); } else openWorkflow(); });
+    var go = el('button', 'btn primary', 'Start the Organisation Assessment'); go.type = 'button';
+    go.addEventListener('click', function () { if (unsaved) { askSave = true; renderNext(); } else openOrganisation(); });
     var back = el('button', 'btn', 'Back to the Path'); back.type = 'button';
     back.addEventListener('click', function () { if (window.__toolkitShowTab) window.__toolkitShowTab('path'); });
     act.appendChild(go); act.appendChild(back); host.appendChild(act);
-    host.appendChild(el('p', 'hint', 'The Workflow Assessment opens in a new tab so this page keeps your strategy. Keep this tab open until you have downloaded the file.'));
+    host.appendChild(el('p', 'hint', 'Download your file before you move on: nothing is kept in the browser.'));
   }
 
   // A row or column heading. Starter ones are fixed because the recommendation reads them. Ones the client adds carry a name, a choice of
@@ -211,7 +210,7 @@
     if (!ranked().length) { Workmatik.notify('Give at least one measure a priority number before you download. The priorities drive the recommended organisation model and the workflow tagging.', { title: 'Choose a priority' }); return; }
     if (!Workmatik.requireOrg()) return;
     var sh = sheets(), fname = Workmatik.fileName('strategy');
-    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; renderNext(); }
+    function fallback() { var wb = XLSX.utils.book_new(); sh.forEach(function (s) { var ws = XLSX.utils.aoa_to_sheet(s[1]); ws['!cols'] = s[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, s[0]); }); XLSX.writeFile(wb, fname); dirty = false; renderNext(); if (window.__toolkitMarkDone) window.__toolkitMarkDone("strategy"); }
     if (typeof ExcelJS === 'undefined') { fallback(); return; }
     var wb = new ExcelJS.Workbook(); wb.creator = 'Workmatik'; wb.title = 'AI Strategy';
     sh.forEach(function (s) {
@@ -222,7 +221,7 @@
     });
     wb.xlsx.writeBuffer().then(function (buf) {
       var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); dirty = false; renderNext(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; document.body.appendChild(a); a.click(); dirty = false; renderNext(); if (window.__toolkitMarkDone) window.__toolkitMarkDone('strategy'); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }).catch(fallback);
   }
   function kvOf(ws) { var o = {}; if (ws) XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).forEach(function (r) { if (r[0] !== '' && r[0] !== 'Field') o[String(r[0])] = r[1]; }); return o; }

@@ -79,9 +79,11 @@
   }
   function parseSkills(wb) {
     var m = kv(wb.Sheets['Meta']), scores = [];
-    var by = {}; XLSX.utils.sheet_to_json(wb.Sheets['Assessment'], { header: 1, defval: '' }).forEach(function (r, i) { if (i === 0) return; var id = Number(r[0]), s = Number(r[2]); if (Number.isInteger(id) && Number.isInteger(s) && s >= 0 && s <= 4) by[id] = s; });
+    var rater = String(m['Rater type'] || '').toLowerCase(), team = rater === 'team';
+    var by = {}; XLSX.utils.sheet_to_json(wb.Sheets['Assessment'], { header: 1, defval: '' }).forEach(function (r, i) { if (i === 0) return; var id = Number(r[0]), s = Number(r[2]); if (Number.isInteger(id) && isFinite(s) && r[2] !== '' && s >= 0 && s <= 4 && (team || Number.isInteger(s))) by[id] = s; });
     for (var i = 0; i < REF.skillDomains.length; i++) { if (by[i] === undefined) throw new Error('missing domain'); scores.push(by[i]); }
-    return { kind: 'skills', kv: kv(wb.Sheets['Workmatik data']), org: String(m['Team'] || ''), name: String(m['Name'] || ''), rater: String(m['Rater type'] || ''), date: serialToIso(m['Date']), scores: scores };
+    var people = team ? Math.max(1, parseInt(m['People'], 10) || 1) : 1;
+    return { kind: 'skills', kv: kv(wb.Sheets['Workmatik data']), org: String(m['Team'] || ''), name: String(m['Name'] || ''), rater: String(m['Rater type'] || ''), date: serialToIso(m['Date']), scores: scores, team: team, people: people };
   }
   function parseMap(wb) {
     var rows = rowsOf(wb.Sheets['Data']), out = [], org = '';
@@ -148,7 +150,7 @@
     if (p.kind === 'roles') return plural(p.rows.length, 'activity', 'activities') + ' in scope';
     if (p.kind === 'workflow') return plural(p.rows.length, 'scored workflow', 'scored workflows') + (p.unscored ? ', ' + p.unscored + ' not fully scored' : '');
     if (p.kind === 'capability') return plural(p.n, 'capability', 'capabilities') + ' scored';
-    if (p.kind === 'skills') return (p.name || 'Unnamed') + ', ' + p.rater;
+    if (p.kind === 'skills') return p.team ? (p.name || 'Team') + ', team file, ' + plural(p.people, 'person', 'people') : (p.name || 'Unnamed') + ', ' + p.rater;
     return plural(p.rows.length, 'skill', 'skills') + ' ranked';
   }
   function renderFiles() {
@@ -211,7 +213,9 @@
     out.domains = null;
     if (F.skills.length) {
       out.domains = REF.skillDomains.map(function (d, i) {
-        var vals = F.skills.map(function (s) { return s.scores[i]; }), avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+        // A team file already holds the average of its people, so when one is loaded it stands in for the individual files and nobody is counted twice.
+        var pool = F.skills.filter(function (s) { return s.team; }); if (!pool.length) pool = F.skills;
+        var tot = pool.reduce(function (a, s) { return a + (s.people || 1); }, 0), avg = pool.reduce(function (a, s) { return a + s.scores[i] * (s.people || 1); }, 0) / tot, vals = { length: tot };
         var by = []; out.foundations.forEach(function (f) { if ((REF.catToDomains[String(f.cap.cat)] || []).indexOf(d.id) >= 0) by.push(f.cap.id); });
         return { d: d, avg: avg, n: vals.length, gap: avg <= R.skill, by: by };
       });
@@ -281,6 +285,7 @@
     if (rec.runnerUp) sec.appendChild(el('p', null, 'Runner-up: ' + rec.runnerUp.name + (rec.runnerUp.notReady ? ' (not ready yet)' : '') + '. It scores within ' + rec.margin + ' points of the best fit, so the case for each is close. Both are worth testing, and the choice is yours.'));
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
     sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4], [22, 10, 10, 10, 9, 39]));
+    renderShape(sec);
     if (rec.common.length) { sec.appendChild(el('h3', null, 'Gaps that affect every model')); sec.appendChild(el('p', null, 'Fix these whichever model you choose: ' + rec.common.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') + '. They are left out of the model scores, apart from the extra weight a model puts on them.')); }
     sec.appendChild(el('h3', null, 'Why ' + b.name));
     var ul = el('ul'); b.why.forEach(function (w) { ul.appendChild(el('li', null, 'Strategy: ' + w.cell + ' (priority ' + w.rank + ') adds ' + round1(w.points) + '.')); });
@@ -301,59 +306,87 @@
     return rec;
   }
 
-  // Shape from the roles file, when every role in it has a level and an FTE. Returns null otherwise.
-  function shapeFromRoles(AR) {
-    if (!F.roles || !F.roles.meta) return null;
-    var names = {}; F.roles.rows.forEach(function (r) { names[r.role] = names[r.role] || { n: 0, fa: 0, au: 0 }; var x = names[r.role]; x.n++; if (r.cls === 'Full automation') x.fa++; else if (r.cls === 'Augmentation') x.au++; });
-    var list = Object.keys(names); if (!list.length) return null;
-    var ids = {}; AR.levels.forEach(function (l) { ids[l.name] = l.id; });
-    var today = {}, target = {};
-    for (var i = 0; i < list.length; i++) {
-      var m = F.roles.meta[list[i]]; if (!m || m.fte == null || !ids[m.level]) return null;
-      var x = names[list[i]], tot = Math.max(x.n, (F.roles.totals || {})[list[i]] || 0), keep = Math.max(0, 1 - (x.fa + AR.augShare * x.au) / tot), id = ids[m.level];
-      today[id] = (today[id] || 0) + m.fte; target[id] = (target[id] || 0) + m.fte * keep;
+  // Team shape, as is and to be.
+  // As is: the FTE at each level from the Organisation tab (all human).
+  // To be: the same total, redistributed across the levels in proportion to the level of the roles in the AI Roles Assessment
+  // (weighted by each role's FTE when entered, otherwise one per role). Within each level the work is then split into human only,
+  // augmented and automated using the activities of the roles at that level (the overall split where a level has no roles).
+  function computeShape(AR) {
+    var OG = window.WorkmatikOrganisation, sh = OG ? OG.shape() : { today: {} }, L = AR.levels, has = function (o) { return o && Object.keys(o).length > 0; };
+    var meta = F.roles ? (F.roles.meta || {}) : {}, ids = {}; L.forEach(function (l) { ids[l.name] = l.id; });
+    var per = {};   // role -> split
+    if (F.roles) F.roles.rows.forEach(function (r) { var x = per[r.role] = per[r.role] || { n: 0, ho: 0, au: 0, fa: 0 }; x.n++; if (r.cls === 'Full automation') x.fa++; else if (r.cls === 'Augmentation') x.au++; else x.ho++; });
+    var roleNames = Object.keys(per), withLevel = roleNames.filter(function (r) { return meta[r] && ids[meta[r].level]; });
+    var allFte = withLevel.length > 0 && withLevel.every(function (r) { return meta[r].fte != null && meta[r].fte > 0; });
+    var weight = {}, lvTot = {}, grand = 0, acts = {}, all = { n: 0, ho: 0, au: 0, fa: 0 };
+    L.forEach(function (l) { weight[l.id] = 0; acts[l.id] = { n: 0, ho: 0, au: 0, fa: 0 }; });
+    roleNames.forEach(function (r) { var x = per[r]; all.n += x.n; all.ho += x.ho; all.au += x.au; all.fa += x.fa; });
+    withLevel.forEach(function (r) {
+      var id = ids[meta[r].level], w = allFte ? meta[r].fte : 1; weight[id] += w; grand += w;
+      ['n', 'ho', 'au', 'fa'].forEach(function (k) { acts[id][k] += per[r][k]; });
+    });
+    var today = {}, note = '', fromRoles = false;
+    if (has(sh.today)) { Object.keys(sh.today).forEach(function (k) { today[k] = sh.today[k]; }); }
+    else if (allFte) { fromRoles = true; withLevel.forEach(function (r) { var id = ids[meta[r].level]; today[id] = (today[id] || 0) + meta[r].fte; }); note = 'As-is numbers come from the FTE on each role in the AI Roles Assessment, because none were entered on the Organisation tab.'; }
+    var T = L.reduce(function (a, l) { return a + (today[l.id] || 0); }, 0);
+    var tobe = null;
+    if (T > 0 && grand > 0) {
+      tobe = {}; var share = function (k, id) { var a = acts[id]; return a.n ? a[k] / a.n : (all.n ? all[k] / all.n : 0); };
+      L.forEach(function (l) {
+        var vol = T * weight[l.id] / grand, ho = vol * share('ho', l.id), au = vol * share('au', l.id), fa = vol * share('fa', l.id);
+        tobe[l.id] = { vol: vol, ho: ho, au: au, fa: fa, people: ho + au * (1 - AR.augShare) };
+      });
     }
-    Object.keys(target).forEach(function (k) { target[k] = Math.round(target[k] * 10) / 10; });
-    return { today: today, target: target };
+    return { today: today, tobe: tobe, T: T, note: note, fromRoles: fromRoles, rolesUsed: withLevel.length, rolesTotal: roleNames.length, byFte: allFte };
   }
 
   function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
-  // Shape of the team by level: today, and the target with people (solid) and the work agents take on (outline). Drawn from the client's own numbers.
+  var LIGHT = '#5DC1FF', LIGHT_FILL = '#CDEBFF', DARK_BLUE = '#024873';
+  // Shape of the team by level. Solid light blue is human work, a pale fill is work shared with AI (augmented) and an outline is work AI does alone.
   function renderShape(host) {
     var AR = window.WorkmatikArchetypes, OG = window.WorkmatikOrganisation; if (!AR || !OG) return;
-    var sh = OG.shape(), L = AR.levels, has = function (o) { return Object.keys(o).length > 0; }, note = '';
-    var fr = shapeFromRoles(AR);
-    if (fr) {
-      // The Organisation tab numbers win when entered; otherwise use the roles, and estimate the target from the human only, augmented and automated split.
-      if (!has(sh.today)) { sh = { today: fr.today, target: has(sh.target) ? sh.target : fr.target }; note = 'Today\u2019s numbers come from the level and FTE on each role in the AI Roles Assessment.' + (has(OG.shape().target) ? '' : ' The target is an estimate: today\u2019s FTE less the work that moves to agents (automated activities in full, augmented activities at ' + Math.round(AR.augShare * 100) + '%, as a share of all the role\u2019s activities, so activities you did not select are assumed to stay with people).'); }
-    }
-    var sec = section('Shape of the team', 'People at each level (full-time equivalents), from the Organisation tab. The outline is the work agents take on: today\u2019s number less the people in the target. Reference shapes: McKinsey & Company, \u201cFrom anxiety to advantage: A marketing organization that thrives with AI\u201d (June 2026), describes a pyramid today and a possible diamond. PwC, \u201cNo more pyramids\u201d (January 2026), argues the diamond should be a deliberate choice and suggests an hourglass for knowledge-intensive firms.');
-    if (!has(sh.today)) { sec.appendChild(el('p', null, 'Enter the FTE at each level on the Organisation tab (Team shape by level) to see the shape.')); host.appendChild(sec); return; }
-    var today = L.map(function (x) { return sh.today[x.id] || 0; }), target = L.map(function (x) { return sh.target[x.id] || 0; }), hasT = has(sh.target);
-    var max = Math.max.apply(null, today.concat(target)) || 1, W = 330, rowH = 34, gap = 6, top = 34, H = top + L.length * (rowH + gap) + 8;
-    function panel(title, label, vals, outline) {
-      var svg = svgEl('svg', { viewBox: '0 0 ' + (W + 150) + ' ' + H, role: 'img', 'aria-label': title + ': ' + (label || 'shape') + '. ' + L.map(function (x, i) { return x.name + ' ' + vals[i]; }).join(', ') });
+    var L = AR.levels, S = computeShape(AR), r1 = function (n) { return Math.round(n * 10) / 10; };
+    var sec = el('div'); sec.appendChild(el('h3', null, 'Shape of the team'));
+    sec.appendChild(el('p', 'hint', 'As is: the people at each level from the Organisation tab, all human. To be: the same total spread across levels in proportion to the level of the roles in your AI Roles Assessment, with each level split into human only, augmented and automated work. Reference shapes: McKinsey & Company, “From anxiety to advantage: A marketing organization that thrives with AI” (June 2026); PwC, “No more pyramids” (January 2026).'));
+    if (!S.T) { sec.appendChild(el('p', null, 'Enter the FTE at each level on the Organisation tab (Team shape by level) to see the shape.')); host.appendChild(sec); return; }
+    var today = L.map(function (x) { return S.today[x.id] || 0; });
+    var max = Math.max.apply(null, today.concat(S.tobe ? L.map(function (x) { return S.tobe[x.id].vol; }) : [])) || 1, W = 330, rowH = 34, gap = 6, top = 34, H = top + L.length * (rowH + gap) + 8;
+    function panel(title, label, rows) {
+      var svg = svgEl('svg', { viewBox: '0 0 ' + (W + 200) + ' ' + H, role: 'img', 'aria-label': title + ': ' + (label || 'shape') + '. ' + L.map(function (x, i) { return x.name + ' ' + r1(rows[i].vol) + (rows[i].au != null ? ' (human ' + r1(rows[i].ho) + ', augmented ' + r1(rows[i].au) + ', automated ' + r1(rows[i].fa) + ')' : ''); }).join(', ') });
       svg.style.width = '100%'; svg.style.maxWidth = '520px';
       svg.appendChild(svgEl('text', { x: 150 + W / 2, y: 18, 'text-anchor': 'middle', 'font-weight': '600', 'font-size': '14', fill: 'currentColor' }, title + (label ? ': ' + label : '')));
       for (var i = L.length - 1; i >= 0; i--) {
-        var y = top + (L.length - 1 - i) * (rowH + gap), cx = 150 + W / 2, w = vals[i] / max * W;
+        var y = top + (L.length - 1 - i) * (rowH + gap), cx = 150 + W / 2, x = rows[i], w = x.vol / max * W, x0 = cx - w / 2;
         svg.appendChild(svgEl('text', { x: 144, y: y + rowH / 2 + 4, 'text-anchor': 'end', 'font-size': '12', fill: 'currentColor' }, L[i].name));
-        if (outline) { var ow = today[i] / max * W; svg.appendChild(svgEl('rect', { x: cx - ow / 2, y: y, width: ow, height: rowH, fill: 'none', stroke: '#4E80BD', 'stroke-width': '1.5' })); }
-        svg.appendChild(svgEl('rect', { x: cx - w / 2, y: y, width: w, height: rowH, fill: '#323B4B' }));
-        svg.appendChild(svgEl('text', { x: cx, y: y + rowH / 2 + 4, 'text-anchor': 'middle', 'font-size': '12', fill: w > 28 ? '#ffffff' : '#323B4B', dy: w > 28 ? 0 : -rowH / 2 - 2 }, String(vals[i])));
+        if (x.au == null) svg.appendChild(svgEl('rect', { x: x0, y: y, width: w, height: rowH, fill: LIGHT }));
+        else {
+          var wh = x.ho / max * W, wa = x.au / max * W, wf = x.fa / max * W;
+          svg.appendChild(svgEl('rect', { x: x0, y: y, width: wh, height: rowH, fill: LIGHT }));
+          svg.appendChild(svgEl('rect', { x: x0 + wh, y: y, width: wa, height: rowH, fill: LIGHT_FILL, stroke: LIGHT, 'stroke-width': '1.5' }));
+          svg.appendChild(svgEl('rect', { x: x0 + wh + wa, y: y, width: wf, height: rowH, fill: 'none', stroke: DARK_BLUE, 'stroke-width': '1.5', 'stroke-dasharray': '4 3' }));
+        }
+        svg.appendChild(svgEl('text', { x: x0 + w + 6, y: y + rowH / 2 + 4, 'text-anchor': 'start', 'font-size': '12', fill: '#323B4B' }, String(r1(x.vol))));
       }
       return svg;
     }
     var grid = el('div'); grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px';
-    grid.appendChild(panel('Today', AR.classifyShape(today), today, false));
-    if (hasT) grid.appendChild(panel('Target', AR.classifyShape(target), target, true));
+    grid.appendChild(panel('As is', AR.classifyShape(today), L.map(function (x, i) { return { vol: today[i] }; })));
+    if (S.tobe) grid.appendChild(panel('To be', AR.classifyShape(L.map(function (x) { return S.tobe[x.id].vol; })), L.map(function (x) { return S.tobe[x.id]; })));
     sec.appendChild(grid);
-    if (note) sec.appendChild(el('p', 'hint', note));
-    if (!hasT) sec.appendChild(el('p', 'hint', 'Enter the people at each level in the target to see the target shape and the work agents take on.'));
-    else {
-      var tT = today.reduce(function (a, b) { return a + b; }, 0), tG = target.reduce(function (a, b) { return a + b; }, 0);
-      sec.appendChild(el('p', 'hint', 'Total people: ' + tT + ' today, ' + tG + ' in the target. Solid bars are people, outlines are the work agents take on. The shapes are the result of your numbers, not a recommendation.'));
+    if (S.tobe) {
+      var lg = el('p', 'hint'); lg.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:' + LIGHT + ';vertical-align:-1px"></span> Human only &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + LIGHT_FILL + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Augmented (human with AI) &nbsp; <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed ' + DARK_BLUE + ';vertical-align:-1px"></span> Automated (AI)';
+      sec.appendChild(lg);
+      var rows = L.slice().reverse().map(function (x) { var t = S.tobe[x.id]; return [x.name, r1(S.today[x.id] || 0), r1(t.vol), r1(t.ho), r1(t.au), r1(t.fa), r1(t.people)]; });
+      var tot = L.reduce(function (a, x) { var t = S.tobe[x.id]; return [a[0] + (S.today[x.id] || 0), a[1] + t.vol, a[2] + t.ho, a[3] + t.au, a[4] + t.fa, a[5] + t.people]; }, [0, 0, 0, 0, 0, 0]);
+      rows.push(['Total'].concat(tot.map(r1)));
+      sec.appendChild(table(['Level', 'As is', 'To be: all work', 'Human only', 'Augmented', 'Automated', 'People needed'], rows, [1, 2, 3, 4, 5, 6], [22, 11, 15, 13, 13, 13, 13]));
+      sec.appendChild(el('p', 'hint', 'People needed is the human only work plus the part of the augmented work people still do (' + Math.round((1 - AR.augShare) * 100) + '%, a starting assumption you can change on the Rules tab). The shapes follow from your numbers. They are not a recommendation.'));
+    } else {
+      sec.appendChild(el('p', 'hint', F.roles ? 'Add the usual level (and FTE) to each role in the AI Roles Assessment, "About this role", then reload the file to see the to-be shape.' : 'Load the AI Roles Assessment file, with the level of each role, to see the to-be shape and the AI share at each level.'));
     }
+    if (S.note) sec.appendChild(el('p', 'hint', S.note));
+    if (S.tobe && S.rolesUsed < S.rolesTotal) sec.appendChild(el('p', 'hint', S.rolesUsed + ' of ' + S.rolesTotal + ' roles have a level and are counted. Add a level to the others in the AI Roles Assessment to include them.'));
+    if (S.tobe && !S.byFte) sec.appendChild(el('p', 'hint', 'Not every role has an FTE, so each role counts once. Enter FTE on every role for a closer result.'));
     host.appendChild(sec);
   }
 
@@ -422,7 +455,6 @@
     var rec = renderModel(host, C);
     renderMovesFirst(host, C, rec);
     renderRolesNeeded(host, C);
-    renderShape(host);
     if (C.strat) {
       var P = C.strat, sp = section('Priorities and what supports them', 'From the Strategy tab. Each tracked priority is traced to the workflows you tagged to it, then to the capabilities, skill domains and roles those workflows depend on.');
       if (P.purpose) sp.appendChild(el('p', null, 'Purpose: ' + P.purpose));
@@ -478,7 +510,7 @@
     if (C.domains) {
       var s4 = section('Skills to build', 'Skill domains link to the foundation capabilities by category. The link is the author’s judgement.');
       if (C.domains) {
-        s4.appendChild(el('h3', null, 'AI Skills Assessment (' + plural(F.skills.length, 'response', 'responses') + ')'));
+        s4.appendChild(el('h3', null, 'AI Skills Assessment (' + plural(C.domains[0].n, 'person', 'people') + (F.skills.some(function (x) { return x.team; }) ? ', from your team file' : '') + ')'));
         s4.appendChild(table(['Domain', 'ID', 'Average (0 to 4)', 'Gap', 'Needed for foundations'], C.domains.map(function (d) { return [d.d.name, d.d.id, round1(d.avg).toFixed(1), d.gap ? 'Yes' : '', d.by.join(', ')]; }), [2], [34, 9, 15, 9, 33]));
       }
       host.appendChild(s4);
