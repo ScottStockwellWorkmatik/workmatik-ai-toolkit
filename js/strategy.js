@@ -437,10 +437,10 @@
       for (var i = L.length - 1; i >= 0; i--) {
         var y = top + (L.length - 1 - i) * (rowH + gap), cx = 150 + W / 2, x = rows[i], w = x.vol / max * W, x0 = cx - w / 2;
         svg.appendChild(svgEl('text', { x: 144, y: y + rowH / 2 + 4, 'text-anchor': 'end', 'font-size': '12', fill: 'currentColor' }, L[i].name));
-        if (x.au == null) svg.appendChild(svgEl('rect', { x: x0, y: y, width: w, height: rowH, fill: LIGHT }));
+        if (x.au == null) svg.appendChild(svgEl('rect', { x: x0, y: y, width: w, height: rowH, fill: LIGHT, stroke: LIGHT, 'stroke-width': '1.5' }));
         else {
           var wh = x.ho / max * W, wa = x.au / max * W, wf = x.fa / max * W;
-          svg.appendChild(svgEl('rect', { x: x0, y: y, width: wh, height: rowH, fill: LIGHT }));
+          svg.appendChild(svgEl('rect', { x: x0, y: y, width: wh, height: rowH, fill: LIGHT, stroke: LIGHT, 'stroke-width': '1.5' }));
           svg.appendChild(svgEl('rect', { x: x0 + wh, y: y, width: wa, height: rowH, fill: LIGHT_FILL, stroke: LIGHT, 'stroke-width': '1.5' }));
           svg.appendChild(svgEl('rect', { x: x0 + wh + wa, y: y, width: wf, height: rowH, fill: 'none', stroke: DARK_BLUE, 'stroke-width': '1.5', 'stroke-dasharray': '4 3' }));
         }
@@ -453,7 +453,7 @@
     if (S.tobe) grid.appendChild(panel('To be', AR.classifyShape(L.map(function (x) { return S.tobe[x.id].vol; })), L.map(function (x) { return S.tobe[x.id]; })));
     sec.appendChild(grid);
     if (S.tobe) {
-      var lg = el('p', 'hint'); lg.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:' + LIGHT + ';vertical-align:-1px"></span> Human only &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + LIGHT_FILL + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Augmented (human with AI) &nbsp; <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed ' + DARK_BLUE + ';vertical-align:-1px"></span> Automated (AI)';
+      var lg = el('p', 'hint'); lg.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:' + LIGHT + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Human only &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + LIGHT_FILL + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Augmented (human with AI) &nbsp; <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed ' + DARK_BLUE + ';vertical-align:-1px"></span> Automated (AI)';
       sec.appendChild(lg);
       var rows = L.slice().reverse().map(function (x) { var t = S.tobe[x.id]; return [x.name, r1(S.today[x.id] || 0), r1(t.vol), r1(t.ho), r1(t.au), r1(t.fa), r1(t.people)]; });
       var tot = L.reduce(function (a, x) { var t = S.tobe[x.id]; return [a[0] + (S.today[x.id] || 0), a[1] + t.vol, a[2] + t.ho, a[3] + t.au, a[4] + t.fa, a[5] + t.people]; }, [0, 0, 0, 0, 0, 0]);
