@@ -128,7 +128,8 @@
     { id: 'wf_ready', src: 'wf', k: 'readyShare', pct: true, thr: 0.6, m: 'E', p: 0.5, label: 'Share of selected workflows with high feasibility (weak evidence)', why: 'Repeatable, feasible workflows suit a lean team with agents' },
     { id: 'rl_auto', src: 'roles', k: 'autoShare', pct: true, thr: 0.25, m: 'E', p: 1, label: 'Share of selected activities classed as full automation', why: 'A large automated share suits people who direct agents' },
     { id: 'rl_orch', src: 'roles', k: 'orchShare', pct: true, thr: 0.3, m: 'E', p: 1, label: 'Share of roles in Orchestrator or Builder mode', why: 'Many Orchestrator and Builder roles suit an orchestrator-led team' },
-    { id: 'rl_gov', src: 'roles', k: 'govShare', pct: true, thr: 0.1, m: 'A', p: 1, label: 'Share of roles in Governor mode', why: 'Many Governor roles point to central review and control' }
+    { id: 'rl_gov', src: 'roles', k: 'govShare', pct: true, thr: 0.1, m: 'A', p: 1, label: 'Share of roles in Governor mode', why: 'Many Governor roles point to central review and control' },
+    { id: 'wf_dec', src: 'wf', k: 'decShare', pct: true, thr: 0.5, m: 'A', p: 0.5, label: 'Share of selected workflows with a human decision point marked (only when decision points are recorded)', why: 'Many decision points point to central review of who decides' }
   ];
   // sig = { wf: {...} or null, roles: {...} or null }. Returns points and reasons per model.
   function signalPoints(sig) {

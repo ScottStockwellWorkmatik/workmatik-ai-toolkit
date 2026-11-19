@@ -36,7 +36,7 @@
     var rows = rowsOf(ws).filter(function (r) { return String(r['Activity ID']).trim(); }).map(function (r) {
       return { id: String(r['Activity ID']).trim(), rid: String(r['Role ID']).trim(), group: String(r['Group']), role: String(r['Role']), task: String(r['Task']), activity: String(r['Activity']), cls: String(r['AI Suitability Classification']), custom: /^AC/.test(String(r['Activity ID'])) };
     });
-    var meta = {}; if (wb.Sheets['Role details']) rowsOf(wb.Sheets['Role details']).forEach(function (r) { var nm = String(r['Role']).trim(); if (!nm) return; var m = {}, f = parseFloat(r['FTE today']); if (String(r['Usual level']).trim()) m.level = String(r['Usual level']).trim(); if (String(r['Usual work mode']).trim()) m.mode = String(r['Usual work mode']).trim(); if (!isNaN(f) && f >= 0) m.fte = f; if (Object.keys(m).length) meta[nm] = m; });
+    var meta = {}; if (wb.Sheets['Role details']) rowsOf(wb.Sheets['Role details']).forEach(function (r) { var nm = String(r['Role']).trim(); if (!nm) return; var m = {}, f = parseFloat(r['FTE today']); if (String(r['Usual level']).trim()) m.level = String(r['Usual level']).trim(); if (String(r['Usual work mode']).trim()) m.mode = String(r['Usual work mode']).trim(); if (String(r['Team'] === undefined ? '' : r['Team']).trim()) m.team = String(r['Team']).trim(); if (!isNaN(f) && f >= 0) m.fte = f; if (Object.keys(m).length) meta[nm] = m; });
     var totals = {}; if (wb.Sheets['All activities']) rowsOf(wb.Sheets['All activities']).forEach(function (r) { var nm = String(r['Role']).trim(); if (nm) totals[nm] = (totals[nm] || 0) + 1; });
     return { kind: 'roles', kv: d, org: String(d['Organisation'] || ''), date: serialToIso(d['Exported']), rows: rows, meta: meta, totals: totals };
   }
@@ -52,10 +52,14 @@
   function parseWorkflow(wb) {
     var ws = wb.Sheets['Scoring'], sm = kv(wb.Sheets['Summary']);
     var tv = parseFloat(sm['Value is high above']) || 3, tf = parseFloat(sm['Feasibility is high above']) || 3, rows = [], unscored = 0, off = 0;
-    var stepRoles = {};
+    var stepRoles = {}, decs = {};
     if (wb.Sheets['Steps']) rowsOf(wb.Sheets['Steps']).forEach(function (r) {
       if (String(r['Included']).toUpperCase() === 'N' || !String(r['Role'] || '').trim()) return;
       var k = normWfId(r['Workflow ID']); (stepRoles[k] = stepRoles[k] || {})[String(r['Role']).trim()] = 1;
+    });
+    if (wb.Sheets['Steps']) rowsOf(wb.Sheets['Steps']).forEach(function (r) {
+      if (String(r['Included']).toUpperCase() === 'N' || String(r['Decision point'] === undefined ? '' : r['Decision point']).toUpperCase() !== 'Y') return;
+      var k = normWfId(r['Workflow ID']); (decs[k] = decs[k] || []).push({ activity: String(r['Activity'] || ''), by: String(r['Decided by'] || '').trim() });
     });
     rowsOf(ws).forEach(function (row) {
       if (String(row['Included']).toUpperCase() === 'N') { off++; return; }
@@ -64,7 +68,7 @@
       var tier = String(row['EU AI Act tier'] || 'minimal').trim();
       var v = (sc.V1 + sc.V2) / 2, f = (sc.F1 + sc.F2 + sc.F3) / 3, r = (sc.R1 + sc.R2) / 2;
       var quad = tier === 'prohibited' ? 'prohibited' : (v > tv && f > tf) ? 'start' : (v > tv) ? 'prepare' : (f > tf) ? 'quick' : 'park';
-      rows.push({ id: normWfId(row['ID']), name: String(row['Workflow']), group: String(row['Group'] || ''), own: String(row['Source']).toLowerCase() === 'own', v: v, f: f, r: r, tier: tier, quad: quad, priority: Math.round(v * f / 25 * 100 * (1 - 0.1 * (r - 1))), caps: wfCaps(sc, tier), supports: String(row['Supports'] || '').split(/[;,]/).map(function (x) { return x.trim(); }).filter(Boolean), roles: Object.keys(stepRoles[normWfId(row['ID'])] || {}) });
+      rows.push({ id: normWfId(row['ID']), name: String(row['Workflow']), group: String(row['Group'] || ''), own: String(row['Source']).toLowerCase() === 'own', v: v, f: f, r: r, tier: tier, quad: quad, priority: Math.round(v * f / 25 * 100 * (1 - 0.1 * (r - 1))), caps: wfCaps(sc, tier), supports: String(row['Supports'] || '').split(/[;,]/).map(function (x) { return x.trim(); }).filter(Boolean), roles: Object.keys(stepRoles[normWfId(row['ID'])] || {}), hours: (function () { var h = parseFloat(row['Hours a month (estimate)']); return isNaN(h) || h < 0 ? null : h; })(), decisions: decs[normWfId(row['ID'])] || [] });
     });
     return { kind: 'workflow', kv: kv(wb.Sheets['Workmatik data']), org: String(sm['Organisation or function'] || ''), date: serialToIso(sm['Assessment date']), rows: rows, unscored: unscored, off: off };
   }
@@ -280,6 +284,8 @@
       var n = w.rows.length, risky = 0, ready = 0, rolesSum = 0;
       w.rows.forEach(function (x) { if (x.r >= 3.5 || x.tier === 'high') risky++; if (x.quad === 'start' || x.quad === 'quick') ready++; rolesSum += (x.roles || []).length; });
       out.wf = { n: n, riskShare: risky / n, readyShare: ready / n, avgRoles: rolesSum / n };
+      var anyDec = w.rows.some(function (x) { return x.decisions && x.decisions.length; });
+      if (anyDec) out.wf.decShare = w.rows.filter(function (x) { return x.decisions && x.decisions.length; }).length / n;
     }
     if (r && r.rows && r.rows.length) {
       var nAct = r.rows.length, auto = r.rows.filter(function (x) { return x.cls === 'Full automation'; }).length, names = {}, meta = r.meta || {};
@@ -304,6 +310,7 @@
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
     sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Workflow and role points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), round1(r.signals), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4, 5], [20, 9, 9, 11, 9, 8, 34]));
     renderShape(sec);
+    renderTeamsEffort(sec);
     if (rec.common.length) { sec.appendChild(el('h3', null, 'Gaps that affect every model')); sec.appendChild(el('p', null, 'Fix these whichever model you choose: ' + rec.common.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') + '. They are left out of the model scores, apart from the extra weight a model puts on them.')); }
     sec.appendChild(el('h3', null, 'Why ' + b.name));
     var ul = el('ul'); b.why.forEach(function (w) { ul.appendChild(el('li', null, 'Strategy: ' + w.cell + ' (priority ' + w.rank + ') adds ' + round1(w.points) + '.')); });
@@ -364,6 +371,33 @@
   function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
   var LIGHT = '#5DC1FF', LIGHT_FILL = '#CDEBFF', DARK_BLUE = '#024873';
   // Shape of the team by level. Solid light blue is human work, a pale fill is work shared with AI (augmented) and an outline is work AI does alone.
+  function renderTeamsEffort(host) {
+    var w = F.workflow, r = F.roles, sec = el('div'), any = false;
+    var meta = r && r.meta ? r.meta : {}, teams = {}, names = {};
+    if (r && r.rows) r.rows.forEach(function (x) { names[x.role] = 1; });
+    Object.keys(names).forEach(function (nm) { var m = meta[nm] || {}; if (m.team) { var t = teams[m.team] = teams[m.team] || { roles: 0, fte: 0, hasFte: true }; t.roles++; if (m.fte != null) t.fte += m.fte; else t.hasFte = false; } });
+    var tn = Object.keys(teams).sort();
+    if (tn.length) {
+      any = true; sec.appendChild(el('h3', null, 'Teams today'));
+      sec.appendChild(el('p', 'hint', 'From the Team field in your AI Roles file. Roles without a team are not counted. Use these as the starting units when you test the model with your team.'));
+      sec.appendChild(table(['Team', 'Roles', 'FTE today'], tn.map(function (t) { return [t, String(teams[t].roles), teams[t].hasFte ? String(Math.round(teams[t].fte * 10) / 10) : 'not all roles have FTE']; })));
+    }
+    if (w && w.rows) {
+      var withH = w.rows.filter(function (x) { return x.hours != null; }), withD = w.rows.filter(function (x) { return x.decisions && x.decisions.length; });
+      if (withH.length) {
+        any = true; var tot = 0; withH.forEach(function (x) { tot += x.hours; });
+        sec.appendChild(el('h3', null, 'Effort at stake (estimates)'));
+        sec.appendChild(el('p', null, withH.length + ' of ' + w.rows.length + ' selected workflows have an hours-a-month estimate, ' + Math.round(tot) + ' hours in total (about ' + Math.round(tot / 140 * 10) / 10 + ' FTE at 140 hours a month). Compare this with the shape above: the shape assumes 25% of augmented work moves to agents, so check that the hours support it.'));
+        sec.appendChild(table(['Workflow', 'Hours a month', 'Priority'], withH.slice().sort(function (a, b) { return b.hours - a.hours; }).slice(0, 10).map(function (x) { return [x.name, String(x.hours), String(x.priority)]; })));
+      }
+      if (withD.length) {
+        any = true; sec.appendChild(el('h3', null, 'Decision points'));
+        sec.appendChild(el('p', 'hint', 'Steps marked as a human decision, and the role that decides. These stay with people whichever model you choose, so they show where authority has to sit.'));
+        sec.appendChild(table(['Workflow', 'Decision', 'Decided by'], [].concat.apply([], withD.map(function (x) { return x.decisions.map(function (d) { return [x.name, d.activity, d.by || 'not set']; }); })).slice(0, 30)));
+      }
+    }
+    if (any) host.appendChild(sec);
+  }
   function renderShape(host) {
     var AR = window.WorkmatikArchetypes, OG = window.WorkmatikOrganisation; if (!AR || !OG) return;
     var L = AR.levels, S = computeShape(AR), r1 = function (n) { return Math.round(n * 10) / 10; };
