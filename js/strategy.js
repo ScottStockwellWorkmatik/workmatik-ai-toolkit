@@ -310,6 +310,7 @@
     if (rec.exploration) sec.appendChild(el('p', null, 'Add an exploration unit (+ exploration unit). Your strategy needs new customers as well as efficiency, and the team is large enough to fund a separate unit.'));
     sec.appendChild(table(['Model', 'Strategy points', 'Context points', 'Workflow and role points', 'Gap penalty', 'Score', 'Model-specific gaps'], rec.rows.map(function (r) { return [r.name + (r.notReady ? ' (not ready yet)' : ''), round1(r.strategy), round1(r.context), round1(r.signals), r.penalty ? '-' + round1(r.penalty) : 0, round1(r.score), r.gaps.length ? r.gaps.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') : 'None found']; }), [1, 2, 3, 4, 5], [20, 9, 9, 11, 9, 8, 34]));
     renderShape(sec);
+    renderToday(sec, ans, b);
     renderTeamsEffort(sec);
     if (rec.common.length) { sec.appendChild(el('h3', null, 'Gaps that affect every model')); sec.appendChild(el('p', null, 'Fix these whichever model you choose: ' + rec.common.map(function (x) { return x.name + (x.level === 2 ? ' (large)' : ' (partial)'); }).join('; ') + '. They are left out of the model scores, apart from the extra weight a model puts on them.')); }
     sec.appendChild(el('h3', null, 'Why ' + b.name));
@@ -371,6 +372,29 @@
   function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
   var LIGHT = '#5DC1FF', LIGHT_FILL = '#CDEBFF', DARK_BLUE = '#024873';
   // Shape of the team by level. Solid light blue is human work, a pale fill is work shared with AI (augmented) and an outline is work AI does alone.
+  // Where marketing starts today, read from the Organisation answers that do not score the models. Positions follow the grid in the research brief.
+  function renderToday(host, ans, best) {
+    var AR = window.WorkmatikArchetypes; if (!AR || !ans) return;
+    var dec = ans.decision_location, res = ans.resource_location, dur = ans.team_duration, sec = el('div'), any = false;
+    var dCen = ['Central team decides', 'Central sets rules, local approves'].indexOf(dec) >= 0, dDis = ['Teams decide within agreed limits', 'Individuals decide'].indexOf(dec) >= 0;
+    var rCen = ['All in one central team', 'Central platform with some specialists in teams'].indexOf(res) >= 0, rEmb = ['Mostly embedded in teams with light central support', 'Fully embedded in each team'].indexOf(res) >= 0;
+    if ((dCen || dDis) && (rCen || rEmb)) {
+      var id = dCen ? (rCen ? 'A' : 'B') : (rCen ? ((dur === 'Assembled per project or campaign' || dur === 'Mixed: permanent core plus time-bound crews') ? 'D' : 'C') : 'E');
+      var near = AR.byId(id), nm = near ? near.name : id; any = true;
+      sec.appendChild(el('h3', null, 'Where you start today'));
+      sec.appendChild(el('p', null, 'Your decision, resource and team-duration answers sit closest to ' + nm + ' on the grid. ' + (best ? (best.id === id ? 'That is also the best fit, so the move is about tuning rather than restructuring.' : 'The best fit is ' + best.name + ', so expect a change in where decisions are made or where resources sit.') : '')));
+      sec.appendChild(el('p', 'hint', 'This reading uses only the three Classification answers and the grid in the research brief. It is a starting position, not a score, and it does not change the recommendation.'));
+    }
+    var DIM = [
+      ['S1', 'Working unit', 'working_unit', 'Human team using AI tools', 'Individual plus AI', 'Orchestrator-led lean team works at the individual-plus-AI end'],
+      ['S4', 'Review model', 'review_model', 'Periodic review gates', 'Embedded checks with a named owner', 'Not linked to one model in the brief'],
+      ['S5', 'Organising axis', 'org_axis', 'By function or channel', 'By outcome or value stream', 'Separates the central models (A, B) from outcome pods (C)'],
+      ['S6', 'Exploration unit', 'exploration_unit', 'One structure for running and exploring', 'A separate exploration unit', 'A modifier added to A to D, not a sixth model'],
+      ['S7', 'Production sourcing', 'production_sourcing', 'In-house', 'Agencies and platforms', 'More agency reliance pulls towards the fixed base with crews (D)']
+    ], rows = DIM.filter(function (d) { return ans[d[2]]; }).map(function (d) { return [d[0] + ' ' + d[1], ans[d[2]], d[3] + ' to ' + d[4], d[5]]; });
+    if (rows.length) { any = true; sec.appendChild(el('h3', null, 'Supporting dimensions today')); sec.appendChild(el('p', 'hint', 'The supporting dimensions describe how a model works in practice. They do not score the models. They show where you start along each range, so you can see how far each would have to move. S2 and S3 come from your Workflow and Roles work, not from a question here.')); sec.appendChild(table(['Dimension', 'Your answer', 'Range', 'Link to the models'], rows)); }
+    if (any) host.appendChild(sec);
+  }
   function renderTeamsEffort(host) {
     var w = F.workflow, r = F.roles, sec = el('div'), any = false;
     var meta = r && r.meta ? r.meta : {}, teams = {}, names = {};
