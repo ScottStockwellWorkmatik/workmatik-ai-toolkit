@@ -369,8 +369,29 @@
     return { today: today, tobe: tobe, T: T, note: note, fromRoles: fromRoles, rolesUsed: withLevel.length, rolesTotal: roleNames.length, byFte: allFte };
   }
 
+  // Leader adjustments to the to-be team, held in memory only (nothing is saved in the browser).
+  var shapeAdj = { mode: 'net', share: 0, people: {} };
+  // Applies the capacity choice and any edited headcounts. Editing a level scales its human and augmented work and the capacity kept there; automated work does not grow with headcount.
+  function adjustShape(S, AR) {
+    var L = AR.levels, A = shapeAdj, g = AR.augShare, rows = {}, note = '';
+    var p0 = 0; L.forEach(function (l) { var t = S.tobe[l.id]; p0 += t.ho + t.au * (1 - g); });
+    var released = Math.max(0, S.T - p0), keptTotal = Math.min(1, Math.max(0, A.share / 100)) * released;
+    L.forEach(function (l) { var t = S.tobe[l.id], pl = t.ho + t.au * (1 - g); rows[l.id] = { ho: t.ho, au: t.au, fa: t.fa, kept: p0 > 0 ? keptTotal * pl / p0 : 0 }; });
+    var after0 = {}, baseTotal = 0; L.forEach(function (l) { var r = rows[l.id]; after0[l.id] = r.ho + r.au * (1 - g) + r.kept; baseTotal += after0[l.id]; });
+    function scale(r, f) { r.ho *= f; r.au *= f; r.kept *= f; }
+    var edited = L.filter(function (l) { var v = A.people[l.id]; return v != null && isFinite(v) && v >= 0; }), isEd = {}, sumE = 0;
+    edited.forEach(function (l) { isEd[l.id] = 1; var p = A.people[l.id]; sumE += p; if (after0[l.id] > 0) scale(rows[l.id], p / after0[l.id]); else { rows[l.id].ho = p; } });
+    if (A.mode === 'rebal' && edited.length) {
+      var sumO = 0; L.forEach(function (l) { if (!isEd[l.id]) sumO += after0[l.id]; });
+      var R = baseTotal - sumE, k = sumO > 0 ? Math.max(0, R) / sumO : 0;
+      if (R < 0) note = 'The levels you edited add up to more than the total, so the other levels are set to zero.';
+      L.forEach(function (l) { if (!isEd[l.id]) scale(rows[l.id], k); });
+    }
+    L.forEach(function (l) { var r = rows[l.id]; r.vol = r.ho + r.au + r.fa + r.kept; r.people = r.ho + r.au * (1 - g) + r.kept; r.base = after0[l.id]; });
+    return { rows: rows, released: released, keptTotal: keptTotal, note: note, baseTotal: baseTotal };
+  }
   function svgEl(tag, attrs, text) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
-  var LIGHT = '#5DC1FF', LIGHT_FILL = '#CDEBFF', DARK_BLUE = '#024873';
+  var LIGHT = '#5DC1FF', LIGHT_FILL = '#CDEBFF', DARK_BLUE = '#024873', KEPT_FILL = '#FFE0B2', KEPT_LINE = '#E56515';
   // Shape of the team by level. Solid light blue is human work, a pale fill is work shared with AI (augmented) and an outline is work AI does alone.
   // Where marketing starts today, read from the Organisation answers that do not score the models. Positions follow the grid in the research brief.
   function renderToday(host, ans, best) {
@@ -424,14 +445,14 @@
   }
   function renderShape(host) {
     var AR = window.WorkmatikArchetypes, OG = window.WorkmatikOrganisation; if (!AR || !OG) return;
-    var L = AR.levels, S = computeShape(AR), r1 = function (n) { return Math.round(n * 10) / 10; };
+    var L = AR.levels, S = computeShape(AR), r1 = function (n) { return Math.round(n * 10) / 10; }, AD = S.tobe ? adjustShape(S, AR) : null;
     var sec = el('div'); sec.appendChild(el('h3', null, 'Shape of the team'));
     sec.appendChild(el('p', 'hint', 'As is: the people at each level from the Organisation tab, all human. To be: the same total spread across levels in proportion to the level of the roles in your AI Roles Assessment, with each level split into human only, augmented and automated work. Reference shapes: McKinsey & Company, “From anxiety to advantage: A marketing organization that thrives with AI” (June 2026); PwC, “No more pyramids” (January 2026).'));
     if (!S.T) { sec.appendChild(el('p', null, 'Enter the FTE at each level on the Organisation tab (Team shape by level) to see the shape.')); host.appendChild(sec); return; }
     var today = L.map(function (x) { return S.today[x.id] || 0; });
-    var max = Math.max.apply(null, today.concat(S.tobe ? L.map(function (x) { return S.tobe[x.id].vol; }) : [])) || 1, W = 330, rowH = 34, gap = 6, top = 34, H = top + L.length * (rowH + gap) + 8;
+    var max = Math.max.apply(null, today.concat(AD ? L.map(function (x) { return AD.rows[x.id].vol; }) : [])) || 1, W = 330, rowH = 34, gap = 6, top = 34, H = top + L.length * (rowH + gap) + 8;
     function panel(title, label, rows) {
-      var svg = svgEl('svg', { viewBox: '0 0 ' + (W + 200) + ' ' + H, role: 'img', 'aria-label': title + ': ' + (label || 'shape') + '. ' + L.map(function (x, i) { return x.name + ' ' + r1(rows[i].vol) + (rows[i].au != null ? ' (human ' + r1(rows[i].ho) + ', augmented ' + r1(rows[i].au) + ', automated ' + r1(rows[i].fa) + ')' : ''); }).join(', ') });
+      var svg = svgEl('svg', { viewBox: '0 0 ' + (W + 300) + ' ' + H, role: 'img', 'aria-label': title + ': ' + (label || 'shape') + '. ' + L.map(function (x, i) { return x.name + ' ' + r1(rows[i].vol) + (rows[i].au != null ? ' (human ' + r1(rows[i].ho) + ', augmented ' + r1(rows[i].au) + ', automated ' + r1(rows[i].fa) + ')' : ''); }).join(', ') });
       svg.style.width = '100%'; svg.style.maxWidth = '520px';
       svg.appendChild(svgEl('text', { x: 150 + W / 2, y: 18, 'text-anchor': 'middle', 'font-weight': '600', 'font-size': '14', fill: 'currentColor' }, title + (label ? ': ' + label : '')));
       for (var i = L.length - 1; i >= 0; i--) {
@@ -439,27 +460,64 @@
         svg.appendChild(svgEl('text', { x: 144, y: y + rowH / 2 + 4, 'text-anchor': 'end', 'font-size': '12', fill: 'currentColor' }, L[i].name));
         if (x.au == null) svg.appendChild(svgEl('rect', { x: x0, y: y, width: w, height: rowH, fill: LIGHT, stroke: LIGHT, 'stroke-width': '1.5' }));
         else {
-          var wh = x.ho / max * W, wa = x.au / max * W, wf = x.fa / max * W;
+          var wh = x.ho / max * W, wa = x.au / max * W, wf = x.fa / max * W, wk = (x.kept || 0) / max * W;
           svg.appendChild(svgEl('rect', { x: x0, y: y, width: wh, height: rowH, fill: LIGHT, stroke: LIGHT, 'stroke-width': '1.5' }));
           svg.appendChild(svgEl('rect', { x: x0 + wh, y: y, width: wa, height: rowH, fill: LIGHT_FILL, stroke: LIGHT, 'stroke-width': '1.5' }));
           svg.appendChild(svgEl('rect', { x: x0 + wh + wa, y: y, width: wf, height: rowH, fill: 'none', stroke: DARK_BLUE, 'stroke-width': '1.5', 'stroke-dasharray': '4 3' }));
+          if (wk > 0) svg.appendChild(svgEl('rect', { x: x0 + wh + wa + wf, y: y, width: wk, height: rowH, fill: KEPT_FILL, stroke: KEPT_LINE, 'stroke-width': '1.5' }));
+          [[x0, wh, x.ho, '#023047'], [x0 + wh, wa, x.au, '#023047'], [x0 + wh + wa, wf, x.fa, DARK_BLUE], [x0 + wh + wa + wf, wk, x.kept || 0, '#7A3A06']].forEach(function (sg) {
+            if (sg[1] >= 24 && sg[2] > 0) svg.appendChild(svgEl('text', { x: sg[0] + sg[1] / 2, y: y + rowH / 2 + 4, 'text-anchor': 'middle', 'font-size': '11', 'font-weight': '600', fill: sg[3] }, String(r1(sg[2]))));
+          });
         }
-        svg.appendChild(svgEl('text', { x: x0 + w + 6, y: y + rowH / 2 + 4, 'text-anchor': 'start', 'font-size': '12', fill: '#323B4B' }, String(r1(x.vol))));
+        svg.appendChild(svgEl('text', { x: x0 + w + 6, y: y + rowH / 2 + 4, 'text-anchor': 'start', 'font-size': '12', fill: '#323B4B' }, x.au == null ? String(r1(x.vol)) : r1(x.vol) + ' work · ' + r1(x.people) + ' people'));
       }
       return svg;
     }
     var grid = el('div'); grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px';
     grid.appendChild(panel('As is', AR.classifyShape(today), L.map(function (x, i) { return { vol: today[i] }; })));
-    if (S.tobe) grid.appendChild(panel('To be', AR.classifyShape(L.map(function (x) { return S.tobe[x.id].vol; })), L.map(function (x) { return S.tobe[x.id]; })));
+    if (S.tobe) grid.appendChild(panel('To be', AR.classifyShape(L.map(function (x) { return AD.rows[x.id].vol; })), L.map(function (x) { return AD.rows[x.id]; })));
     sec.appendChild(grid);
     if (S.tobe) {
-      var lg = el('p', 'hint'); lg.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:' + LIGHT + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Human only &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + LIGHT_FILL + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Augmented (human with AI) &nbsp; <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed ' + DARK_BLUE + ';vertical-align:-1px"></span> Automated (AI)';
+      var lg = el('p', 'hint'); lg.innerHTML = '<span style="display:inline-block;width:12px;height:12px;background:' + LIGHT + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Human only &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + LIGHT_FILL + ';border:1.5px solid ' + LIGHT + ';vertical-align:-1px"></span> Augmented (human with AI) &nbsp; <span style="display:inline-block;width:12px;height:12px;border:1.5px dashed ' + DARK_BLUE + ';vertical-align:-1px"></span> Automated (AI)' + (AD.keptTotal > 0 ? ' &nbsp; <span style="display:inline-block;width:12px;height:12px;background:' + KEPT_FILL + ';border:1.5px solid ' + KEPT_LINE + ';vertical-align:-1px"></span> Kept for new or different work' : '');
       sec.appendChild(lg);
-      var rows = L.slice().reverse().map(function (x) { var t = S.tobe[x.id]; return [x.name, r1(S.today[x.id] || 0), r1(t.vol), r1(t.ho), r1(t.au), r1(t.fa), r1(t.people)]; });
-      var tot = L.reduce(function (a, x) { var t = S.tobe[x.id]; return [a[0] + (S.today[x.id] || 0), a[1] + t.vol, a[2] + t.ho, a[3] + t.au, a[4] + t.fa, a[5] + t.people]; }, [0, 0, 0, 0, 0, 0]);
-      rows.push(['Total'].concat(tot.map(r1)));
-      sec.appendChild(table(['Level', 'As is', 'To be: all work', 'Human only', 'Augmented', 'Automated', 'People needed'], rows, [1, 2, 3, 4, 5, 6], [22, 11, 15, 13, 13, 13, 13]));
+      var Rw = AD.rows, withKept = AD.keptTotal > 0, zero = function () { return [0, 0, 0, 0, 0, 0, 0]; };
+      var rows = L.slice().reverse().map(function (x) { var t = Rw[x.id]; var r = [x.name, r1(S.today[x.id] || 0), r1(t.vol), r1(t.ho), r1(t.au), r1(t.fa)]; if (withKept) r.push(r1(t.kept)); r.push(r1(t.people)); return r; });
+      var tot = L.reduce(function (a, x) { var t = Rw[x.id]; return [a[0] + (S.today[x.id] || 0), a[1] + t.vol, a[2] + t.ho, a[3] + t.au, a[4] + t.fa, a[5] + t.kept, a[6] + t.people]; }, zero());
+      rows.push(['Total'].concat(withKept ? tot.map(r1) : [tot[0], tot[1], tot[2], tot[3], tot[4], tot[6]].map(r1)));
+      var heads = ['Level', 'As is', 'To be: all work', 'Human only', 'Augmented', 'Automated'].concat(withKept ? ['Kept for new work'] : []).concat([withKept ? 'Team after' : 'People needed']);
+      var nc = heads.length, numCols = [], widths = [22]; for (var i = 1; i < nc; i++) { numCols.push(i); widths.push(Math.floor(78 / (nc - 1))); }
+      sec.appendChild(table(heads, rows, numCols, widths));
       sec.appendChild(el('p', 'hint', 'People needed is the human only work plus the part of the augmented work people still do (' + Math.round((1 - AR.augShare) * 100) + '%, a starting assumption you can change on the Rules tab). The shapes follow from your numbers. They are not a recommendation.'));
+      // Adjust the team: in memory only
+      var box = el('div', 'card'); box.style.cssText = 'margin-top:12px;padding:12px;border:1px solid #DDDDDD;border-radius:8px';
+      box.appendChild(el('h4', null, 'Adjust the to-be team'));
+      var sum = el('p', null, 'As is team: ' + r1(S.T) + ' people. Capacity released by AI: ' + r1(AD.released) + ' people' + (AD.keptTotal > 0 ? '. Kept in the team for new or different work: ' + r1(AD.keptTotal) + '.' : '.') + ' Team after: ' + r1(L.reduce(function (a, x) { return a + Rw[x.id].people; }, 0)) + ' people.');
+      box.appendChild(sum);
+      var rowEl = el('div'); rowEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:8px 0';
+      function field(label, input) { var w = el('label'); w.style.cssText = 'display:flex;flex-direction:column;font-size:13px;gap:2px'; w.appendChild(el('span', null, label)); w.appendChild(input); return w; }
+      function num(val, ph, max) { var i = el('input'); i.type = 'number'; i.min = '0'; if (max) i.max = max; i.step = '0.5'; i.style.width = '90px'; i.value = val; i.placeholder = ph; return i; }
+      L.slice().reverse().forEach(function (x) {
+        var cur = shapeAdj.people[x.id], i = num(cur != null ? cur : '', String(r1(Rw[x.id].base)), null);
+        i.addEventListener('change', function () { var v = parseFloat(i.value); if (isFinite(v) && v >= 0) shapeAdj.people[x.id] = v; else delete shapeAdj.people[x.id]; renderRoadmap(); });
+        rowEl.appendChild(field('People: ' + x.name, i));
+      });
+      var sh = num(shapeAdj.share ? shapeAdj.share : '', '0', 100);
+      sh.addEventListener('change', function () { var v = parseFloat(sh.value); shapeAdj.share = isFinite(v) ? Math.min(100, Math.max(0, v)) : 0; renderRoadmap(); });
+      rowEl.appendChild(field('Redeployed share of released capacity (%)', sh));
+      box.appendChild(rowEl);
+      var md = el('div'); md.style.cssText = 'font-size:13px;margin:6px 0';
+      [['net', 'Net new: the total can rise'], ['rebal', 'Rebalance: keep the team after total, scale the other levels by their current share']].forEach(function (o) {
+        var lb = el('label'); lb.style.marginRight = '16px'; var r = el('input'); r.type = 'radio'; r.name = 'shape-mode'; r.checked = shapeAdj.mode === o[0];
+        r.addEventListener('change', function () { shapeAdj.mode = o[0]; renderRoadmap(); });
+        lb.appendChild(r); lb.appendChild(document.createTextNode(' ' + o[1])); md.appendChild(lb);
+      });
+      box.appendChild(md);
+      if (AD.note) box.appendChild(el('p', 'hint', AD.note));
+      var rs = el('button', 'btn', 'Reset adjustments'); rs.type = 'button';
+      rs.addEventListener('click', function () { shapeAdj = { mode: 'net', share: 0, people: {} }; renderRoadmap(); });
+      box.appendChild(rs);
+      box.appendChild(el('p', 'hint', 'Type the number of people you want at a level. Each level keeps its mix of human only, augmented and automated work. Released capacity is the as is team minus the people needed. Orange shows the part kept for new or different work. Adjustments are not saved and clear when you leave the page.'));
+      sec.appendChild(box);
     } else {
       sec.appendChild(el('p', 'hint', F.roles ? 'Add the usual level (and FTE) to each role in the AI Roles Assessment, "About this role", then reload the file to see the to-be shape.' : 'Load the AI Roles Assessment file, with the level of each role, to see the to-be shape and the AI share at each level.'));
     }
